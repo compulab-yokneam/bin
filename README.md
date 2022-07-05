@@ -1,1 +1,1 @@
-# iot-gate-imx8plus-config
+# iot-gate-imx8plus tools
