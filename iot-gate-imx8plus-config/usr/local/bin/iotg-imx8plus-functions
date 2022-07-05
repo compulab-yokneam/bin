@@ -1,0 +1,86 @@
+#!/bin/bash
+
+# Definitions
+
+# POD_DET GPIOs and chip
+POD_DET_GPIO_CHIP=5
+POD_DET_GPIO_CHIP_DEVPATH=/dev/gpiochip${POD_DET_GPIO_CHIP}
+declare -A POD_DET_GPIOS=(
+		[a]="0 1 2"
+		[b]="3 4 5"
+		[c]="6 7 8"
+		[d]="9 10 11"
+)
+
+# Default IE module types
+IE_DET_DEF="Empty"
+
+# Array of detected IE modules
+declare -A IE_DETECTED=(
+		[a]=${IE_DET_DEF}
+		[b]=${IE_DET_DEF}
+		[c]=${IE_DET_DEF}
+		[d]=${IE_DET_DEF}
+)
+
+# Slot names
+declare -a IE_SLOT_LCASE=(
+		"a"
+		"b"
+		"c"
+		"d"
+)
+
+#############################################################################
+# int get_ie_type() - determines IE board type for a pod with a given index
+# @slot - slot name a, b, c, d
+# A detected IE type is set in the IE_DETECTED[] array
+#############################################################################
+function get_ie_type() {
+	local slot=${1:-}
+	[[ ! -z ${slot} ]] || return 1;
+	[[ -c ${POD_DET_GPIO_CHIP_DEVPATH} ]] || return 1;
+	# Determine GPIOs
+	case ${slot} in
+	"a" | "b" | "c" | "d")
+		pod_det_gpios=${POD_DET_GPIOS[${slot}]}
+		;;
+	*)
+		return 1;
+		;;
+	esac
+	# Read GPIOs
+	local ie_cfg=$(gpioget ${POD_DET_GPIO_CHIP} ${pod_det_gpios})
+
+	# Determine IE type
+	local ie_type="Undefined"
+	case $ie_cfg in
+	"0 0 0")
+		ie_type="Empty"
+		;;
+	"0 1 0")
+		ie_type="RS485"
+		;;
+	"0 1 1")
+		ie_type="RS232"
+		;;
+	"1 0 0")
+		ie_type="DI4O4"
+		;;
+	*)
+		ie_type="Undefined"
+		;;
+	esac
+	IE_DETECTED[${slot}]=${ie_type}
+	return 0
+}
+
+function get_ie_type_all() {
+	local slot
+
+	# Get all single slots types
+	for slot in ${IE_SLOT_LCASE[@]}
+	do
+		get_ie_type $slot
+	done
+}

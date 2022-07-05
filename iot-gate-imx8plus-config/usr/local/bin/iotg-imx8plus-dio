@@ -1,0 +1,99 @@
+#!/bin/bash
+
+SERV_HOME=$(dirname $0)
+. ${SERV_HOME}/iotg-imx8plus-functions
+
+MIN_OFFSET=0
+MAX_OFFSET=3
+
+declare -a GPIO_o=(30 4 1 12)
+declare -a CHIP_o=(3 4 0 3)
+declare -a GPIO_i=(3 0 31 29)
+declare -a CHIP_i=(4 4 3 3)
+
+function msg() {
+	echo "${SCR_NAME}: $@"
+}
+
+function err_msg() {
+	msg "Error: $@"
+	exit 1
+}
+
+function usage() {
+	local ret=${1:-0}
+	echo "Usage: ${SCR_NAME} [options] <command>"
+	echo "Command:"
+	echo "	-i <offset>			read state of input pin <0|1|2|3>"
+	echo "	-o <offset> <state>		set output pin <0|1|2|3> state <0|1>"
+
+	echo "Options:"
+	echo "	-h				display this help"
+	exit ${ret}
+}
+
+function main() {
+	local slot="d"
+	local offset=
+	local opt=
+	local state=
+
+	get_ie_type ${slot} || err_msg "Cannot read I/O module type in [${slot^^}] slot"
+	if [[ "${IE_DETECTED[${slot}]}" != "DI4O4" ]]; then
+		err_msg "DI4O4 module not detected in [${slot^^}] slot"
+	fi
+
+	while getopts ':h:i:o:' OPTION; do
+		case "${OPTION}" in
+		"i" | "o")
+			opt=${OPTION}
+			offset="${OPTARG}"
+			if [[ ${offset} -lt ${MIN_OFFSET} || ${offset} -gt ${MAX_OFFSET} ]]; then
+				err_msg "Invalid I/O pin offset ${offset}"
+			fi
+			;;
+		"h")
+			usage 0
+			;;
+		?)
+			usage 1
+			;;
+		esac
+	done
+	if [[ -z "${offset}" ]]; then
+		err_msg "Offset patameter not specified"
+	fi
+
+	declare -n pin_arr_name=GPIO_${opt}
+	gpio_num=${pin_arr_name[${offset}]}
+	declare -n chip_arr_name=CHIP_${opt}
+	chip=${chip_arr_name[${offset}]}
+	case "${opt}" in
+	"i")
+		state=$(gpioget ${chip} ${gpio_num})
+		ret=$?
+		[[ ${ret} -ne 0 ]] || echo ${state}
+		return ${ret}
+		;;
+	"o")
+		shift "$((${OPTIND} - 1))"
+		state=${1:-}
+		if [[ -z "${state}" ]]; then
+			err_msg "State patameter not specified"
+		fi
+		if [[ ${state} -lt 0 || ${state} -gt 1 ]]; then
+			err_msg "Invalid state ${state}"
+		fi
+		gpioset ${chip} ${gpio_num}=${state}
+		return $?
+		;;
+	*)
+		return 1
+		;;
+	esac
+}
+
+#set -x
+SCR_NAME=$(basename $0)
+main $@
+#set +x

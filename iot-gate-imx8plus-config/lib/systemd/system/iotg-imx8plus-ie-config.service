@@ -1,0 +1,14 @@
+[Unit]
+Description=Configure IOT-GATE-iMX8PLUS Industrial I/O modules
+After=boot.mount
+ConditionPathExists=/usr/local/bin/iotg-imx8plus-ie-config
+
+[Service]
+Type=oneshot
+Type=simple
+ExecStart=/usr/local/bin/iotg-imx8plus-ie-config
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

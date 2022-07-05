@@ -1,0 +1,45 @@
+#!/bin/bash
+
+SERV_HOME=$(dirname $0)
+. ${SERV_HOME}/iotg-imx8plus-functions
+
+TTY_IE=ttyIE
+
+function main() {
+	local slot=${1:-}
+
+	get_ie_type_all
+	ret=$?
+	if [[ ${ret} -ne 0 ]]; then
+		exit ${ret}
+	fi
+
+	if [[ -n "${slot}" ]]; then
+		case "${slot}" in
+		"a" | "b" | "c" | "d" | "A" | "B" | "C" | "D")
+			echo "IE_DETECTED[${slot^^}] = ${IE_DETECTED[${slot,,}]}"
+			;;
+		*)
+			return 1
+		esac
+		return 0
+	fi
+
+	for slot in ${IE_SLOT_LCASE[@]}
+	do
+		echo "IE_DETECTED[${slot}] = ${IE_DETECTED[${slot}]}"
+
+		case "${IE_DETECTED[${slot}]}" in
+		"RS232" | "RS485")
+			[[ -h /dev/${TTY_IE}${slot^} ]] || continue
+			[[ -c $(readlink -f /dev/${TTY_IE}${slot^}) ]] || continue
+			sudo ln -fs ${TTY_IE}${slot^} /dev/tty${IE_DETECTED[${slot}]}_${slot^} &> /dev/null
+			;;
+		*)
+			continue
+			;;
+		esac
+	done
+}
+
+main $@
