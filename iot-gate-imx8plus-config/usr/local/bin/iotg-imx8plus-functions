@@ -23,6 +23,14 @@ declare -A IE_DETECTED=(
 		[d]=${IE_DET_DEF}
 )
 
+# Array of detected IE modules
+declare -A IE_SUPPORTED=(
+		[a]="RS232 | RS485"
+		[b]="RS232 | RS485"
+		[c]="RS232 | RS485 | CAN"
+		[d]="DI4O4"
+)
+
 # Slot names
 declare -a IE_SLOT_LCASE=(
 		"a"
@@ -53,7 +61,7 @@ function get_ie_type() {
 	local ie_cfg=$(gpioget ${POD_DET_GPIO_CHIP} ${pod_det_gpios})
 
 	# Determine IE type
-	local ie_type="Undefined"
+	local ie_type="N/A"
 	case $ie_cfg in
 	"0 0 0")
 		ie_type="Empty"
@@ -67,8 +75,11 @@ function get_ie_type() {
 	"1 0 0")
 		ie_type="DI4O4"
 		;;
+	"1 1 1")
+		ie_type="CAN"
+		;;
 	*)
-		ie_type="Undefined"
+		ie_type="N/A"
 		;;
 	esac
 	IE_DETECTED[${slot}]=${ie_type}

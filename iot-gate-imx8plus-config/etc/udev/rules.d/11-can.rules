@@ -1,0 +1,2 @@
+SUBSYSTEM=="net", ACTION=="add", DEVPATH=="/devices/platform/soc@0/30800000.bus/308c0000.can/net/can?", NAME="canC"
+SUBSYSTEM=="net", ACTION=="add", DEVPATH=="/devices/platform/soc@0/30800000.bus/308d0000.can/net/can?", NAME="canE"

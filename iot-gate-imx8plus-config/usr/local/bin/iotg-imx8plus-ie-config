@@ -27,7 +27,7 @@ function main() {
 
 	for slot in ${IE_SLOT_LCASE[@]}
 	do
-		echo "IE_DETECTED[${slot}] = ${IE_DETECTED[${slot}]}"
+		echo "IE_DETECTED[${slot}] = ${IE_DETECTED[${slot}]}	(supported types [${slot}] = ${IE_SUPPORTED[$slot]})"
 
 		case "${IE_DETECTED[${slot}]}" in
 		"RS232" | "RS485")
