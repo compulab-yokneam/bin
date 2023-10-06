@@ -95,3 +95,18 @@ function get_ie_type_all() {
 		get_ie_type $slot
 	done
 }
+
+function get_platform() {
+	local m=$(udevadm info -ap  /sys/devices/soc0 | awk -F"==" '(/machine/)&&($0=$2)')
+	case "${m}" in
+	*IOT*)
+		return;
+		;;
+	*)
+		echo "Unsupported platform ... "
+		exit 0
+		;;
+	esac
+}
+
+get_platform
