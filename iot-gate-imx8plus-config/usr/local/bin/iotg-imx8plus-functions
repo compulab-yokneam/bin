@@ -21,6 +21,7 @@ declare -A IE_DETECTED=(
 		[b]=${IE_DET_DEF}
 		[c]=${IE_DET_DEF}
 		[d]=${IE_DET_DEF}
+		[x]=${IE_DET_DEF}
 )
 
 # Array of detected IE modules
@@ -29,6 +30,7 @@ declare -A IE_SUPPORTED=(
 		[b]="RS232 | RS485"
 		[c]="RS232 | RS485 | CAN"
 		[d]="DI4O4"
+		[x]="TPM | eMMC | ADC"
 )
 
 # Slot names
@@ -37,14 +39,84 @@ declare -a IE_SLOT_LCASE=(
 		"b"
 		"c"
 		"d"
+		"x"
+)
+
+# Add-ons
+## I2C bus
+declare -A ADDON_BUS=(
+		[eMMC]="4"
+		[ADC]="4"
+		[TPM]="4"
+)
+## I2C slave addr
+declare -A ADDON_CHIP=(
+		[eMMC]="0x20"
+		[ADC]="0x48"
+		[TPM]="0x54"
+)
+## Reg offset
+declare -A ADDON_OFFSET=(
+		[eMMC]="0"
+		[ADC]="2"
+		[TPM]="0"
+)
+
+# Add on board types
+declare -a M2_ADDON_LIST=(
+		"eMMC"
+		"ADC"
+		"TPM"
 )
 
 #############################################################################
-# int get_ie_type() - determines IE board type for a pod with a given index
+# int detect_m2_type() - determines EXP board type in M.2 slot
+# @slot - slot name x
+# A detected EXP type is set in the IE_DETECTED[x] array
+#############################################################################
+function detect_m2_type() {
+	local slot=${1:-}
+	[[ ! -z ${slot} ]] || return 1;
+	case ${slot} in
+	"x")
+		;;
+	*)
+		return 1;
+		;;
+	esac
+
+	# Detect add-on board in M.2 connector by access a corresponding slave on I2C bus:
+	# - TPM add-on board:  i2c bus 4, slave address 0x54-0x58 (24C08 EEPROM)
+	# - eMMC add-on board: i2c bus 4, slave address 0x20 (PCA955 GPIO expander)
+	# - ADC add-on board:  i2c bus 4, slave address 0x48 (ADS1015 ADC)
+	local m2_type="N/A"
+	for type in ${M2_ADDON_LIST[@]} ; do
+		bus=${ADDON_BUS[${type}]}
+		addr=${ADDON_CHIP[${type}]}
+		reg=${ADDON_OFFSET[${type}]}
+		local ret=
+		ret=$(i2cget -f -y ${bus} ${addr} ${reg} 2> /dev/null)
+		if [[ -n ${ret} ]]; then
+			m2_type="${type}"
+			if [ "${type}" == "eMMC" ]; then
+				# Calculate eMMC size
+				local size=$(((ret & 0xf) << 4))
+				m2_type="${type}(${size}G)"
+			fi
+			break;
+		fi
+	done
+
+	IE_DETECTED[${slot}]=${m2_type}
+	return 0
+}
+
+#############################################################################
+# int detect_ie_type() - determines IE board type for a pod with a given index
 # @slot - slot name a, b, c, d
 # A detected IE type is set in the IE_DETECTED[] array
 #############################################################################
-function get_ie_type() {
+function detect_ie_type() {
 	local slot=${1:-}
 	[[ ! -z ${slot} ]] || return 1;
 	[[ -c ${POD_DET_GPIO_CHIP_DEVPATH} ]] || return 1;
@@ -84,6 +156,28 @@ function get_ie_type() {
 	esac
 	IE_DETECTED[${slot}]=${ie_type}
 	return 0
+}
+
+#############################################################################
+# int get_ie_type() - determines IE board type for a pod with a given index
+# @slot - slot name a, b, c, d , x
+# A detected IE type is set in the IE_DETECTED[] array
+#############################################################################
+function get_ie_type() {
+	local slot=${1:-}
+	case ${slot} in
+	"a" | "b" | "c" | "d")
+		detect_ie_type ${slot}
+		return $?;
+		;;
+	"x" )
+		detect_m2_type ${slot}
+		return $?;
+		;;
+	*)
+		return 1;
+		;;
+	esac
 }
 
 function get_ie_type_all() {

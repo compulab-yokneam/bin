@@ -16,7 +16,7 @@ function main() {
 
 	if [[ -n "${slot}" ]]; then
 		case "${slot}" in
-		"a" | "b" | "c" | "d" | "A" | "B" | "C" | "D")
+		"a" | "b" | "c" | "d" | "x" | "A" | "B" | "C" | "D" | "X")
 			echo "IE_DETECTED[${slot^^}] = ${IE_DETECTED[${slot,,}]}"
 			;;
 		*)
@@ -27,7 +27,7 @@ function main() {
 
 	for slot in ${IE_SLOT_LCASE[@]}
 	do
-		echo "IE_DETECTED[${slot}] = ${IE_DETECTED[${slot}]}	(supported types [${slot}] = ${IE_SUPPORTED[$slot]})"
+		printf "IE_DETECTED[%s] = %-10s (supported types [%s] = %s)\n" "${slot}" "${IE_DETECTED[${slot}]}" "${slot}" "${IE_SUPPORTED[$slot]}"
 
 		case "${IE_DETECTED[${slot}]}" in
 		"RS232" | "RS485")
