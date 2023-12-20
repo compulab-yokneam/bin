@@ -7,6 +7,7 @@ TTY_IE=ttyIE
 
 function main() {
 	local slot=${1:-}
+	local slist="${IE_SLOT_LCASE[@]}"
 
 	get_ie_type_all
 	ret=$?
@@ -17,15 +18,14 @@ function main() {
 	if [[ -n "${slot}" ]]; then
 		case "${slot}" in
 		"a" | "b" | "c" | "d" | "x" | "A" | "B" | "C" | "D" | "X")
-			echo "IE_DETECTED[${slot^^}] = ${IE_DETECTED[${slot,,}]}"
+			slist="${slot,,}"
 			;;
 		*)
 			return 1
 		esac
-		return 0
 	fi
 
-	for slot in ${IE_SLOT_LCASE[@]}
+	for slot in ${slist}
 	do
 		printf "IE_DETECTED[%s] = %-10s (supported types [%s] = %s)\n" "${slot}" "${IE_DETECTED[${slot}]}" "${slot}" "${IE_SUPPORTED[$slot]}"
 
