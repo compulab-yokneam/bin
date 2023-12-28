@@ -1,0 +1,17 @@
+#!/bin/bash
+
+MEM_TOOL=bin/memtool
+MEM_SCR=scripts/no-short-press.sh
+
+URL=https://github.com/compulab-yokneam/bin/raw/imx8/power-button/
+
+WORK_DIR=$(mktemp --directory)
+
+for tool in ${MEM_SCR} ${MEM_TOOL};do
+    wget --directory-prefix ${WORK_DIR} ${URL}/${tool}
+    chmod a+x ${WORK_DIR}/$(basename ${tool})
+done
+
+MEMTOOL=${WORK_DIR}/$(basename ${MEM_TOOL}) ${WORK_DIR}/$(basename ${MEM_SCR})
+
+rm -rf ${WORK_DIR}
