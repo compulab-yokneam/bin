@@ -1,0 +1,71 @@
+#!/bin/bash
+
+SCR_NAME=$(basename $0)
+[[ -z ${IOTDIN_LIB_HOME} ]] && export IOTDIN_LIB_HOME=$(dirname ${0})
+
+# Includes
+. ${IOTDIN_LIB_HOME}/common.inc
+. ${IOTDIN_LIB_HOME}/dio_lib.inc
+
+function usage() {
+	local ret=${1:-0}
+	echo "Usage: ${SCR_NAME} [options] <command>"
+	echo ""
+	echo "Read digital input state from a Digital I/O (DIO) module"
+	echo ""
+	echo "Command:"
+	echo " -m <module> <offset>"
+	echo " 	module: DIO module location:"
+	echo " 	    m|M - Main Gateway"
+	echo " 	    a|A - Virtulal slot A"
+	echo " 	    ..."
+	echo " 	    h|H - Virtulal slot H"
+	echo " 	offset:	input pin offset: <0..MaxOffset>"
+	echo "Options:"
+	echo " -h:	display this help and exit"
+	exit ${ret}
+}
+
+declare -a D_CHIP=()
+declare -a D_PIN=()
+
+function main() {
+	local slot=
+	local offset=
+	local state=
+
+	while getopts ':h:m:' OPTION; do
+		case "${OPTION}" in
+		"m")
+			slot="${OPTARG}"
+			[[ -n ${slot} ]] || err_msg "DIO module location is missing"
+			[[ "${slot}" =~ [a-hA-HmM] ]] || err_msg "Invalid DIO module location '${slot}'"
+			shift 2
+			offset="${1:-}"
+			[[ -n ${offset} ]] || err_msg "Input pin offset is missing"
+			shift
+			;;
+		"h")
+			usage 0
+			;;
+		?)
+			usage 1
+			;;
+		esac
+	done
+
+	[[ -n ${slot} ]] || err_msg "DIO module location is missing"
+	[[ -n ${offset} ]] || err_msg "Input pin offset is missing"
+	
+	# Check parameters
+	check_params_in ${slot} ${offset}
+	# Read state
+	state=$(gpioget ${D_CHIP[${offset}]}  ${D_PIN[${offset}]})
+	ret=$?
+	[[ ${ret} -ne 0 ]] || echo ${state}
+	return ${ret}
+}
+
+#set -x
+main $@
+#set +x

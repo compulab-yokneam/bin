@@ -1,0 +1,91 @@
+#!/bin/bash
+
+SCR_NAME=$(basename $0)
+[[ -z ${IOTDIN_LIB_HOME} ]] && export IOTDIN_LIB_HOME=$(dirname ${0})
+
+# Includes
+. ${IOTDIN_LIB_HOME}/common.inc
+. ${IOTDIN_LIB_HOME}/dio_lib.inc
+
+function usage() {
+	local ret=${1:-0}
+	echo "Usage: ${SCR_NAME} [options]"
+	echo ""
+	echo "List all Digital I/O (DIO) modules"
+	echo ""
+	echo "Options:"
+	echo " -h:	display this help and exit"
+	exit ${ret}
+}
+
+function list_dio_gateway() {
+	. ${IOTDIN_LIB_HOME}/gw.inc
+	local dmap=${GW_ACCESS_IO_HOME}/${GW_ACCESS_DI}
+	#[[ -e ${dmap} ]] || return 1;
+	{ read -a D_CHIP ; read -a D_PIN ; } <${dmap}
+	local di_num=${#D_PIN[@]}
+	D_CHIP=()
+	D_PIN=()
+	dmap=${GW_ACCESS_IO_HOME}/${GW_ACCESS_DO}
+	{ read -a D_CHIP ; read -a D_PIN ; } <${dmap}
+	local do_num=${#D_PIN[@]}
+	printf "Main Gateway:\t%s\t(%dx DI; %dx DO)\n" ${GW_DIO} ${di_num} ${do_num}
+}
+
+function list_dio_stack () {
+	. ${IOTDIN_LIB_HOME}/stack_lib.inc
+	. ${IOTDIN_LIB_HOME}/ifm.inc
+
+	local fslot=${BIDX}	# From slot
+	local tslot=${EIDX}	# To slot
+	local slot_list=$(seq ${fslot} ${tslot} | xargs -x)
+	local ifm_type=${IFM_TYPE_ND}
+	local dmap=
+	local di_num=
+	local do_num=
+
+	for i in ${slot_list}; do
+		local slot_home=${FPE_HOME}/${STACK_SLOTS[${i}]}
+		[[ -d ${slot_home} ]] || continue
+		ifm_type=$(ls ${slot_home} | grep "${FPE_IFM}\.")
+		ifm_type="${ifm_type##*.}"
+		[[ "${ifm_type}" == "DI8O8" ]] || continue
+		dmap=${slot_home}/${FPE_ACCESS}/${ACCESS_DI}
+		{ read -a D_CHIP ; read -a D_PIN ; } <${dmap}
+		di_num=${#D_PIN[@]}
+		D_CHIP=()
+		D_PIN=()
+		dmap=${slot_home}/${FPE_ACCESS}/${ACCESS_DO}
+		{ read -a D_CHIP ; read -a D_PIN ; } <${dmap}
+		do_num=${#D_PIN[@]}
+		printf "Stack Slot ${STACK_SLOTS[${i}]}:\t%s\t(%dx DI; %dx DO)\n" ${ifm_type} ${di_num} ${do_num}
+	done
+}
+
+function main() {
+	VALID_ARGS=$(getopt -o h -- "$@")
+	if [[ $? -ne 0 ]]; then
+		usage 1
+	fi
+
+	eval set -- "$VALID_ARGS"
+	while [ : ] ; do
+		case "${1}" in
+		-h)
+			usage 0
+			break
+			;;
+		--)
+			shift;
+			break
+			;;
+		esac
+	done
+
+	list_dio_gateway
+	list_dio_stack
+}
+
+#set -x
+main $@
+#set +x

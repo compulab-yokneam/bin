@@ -1,0 +1,13 @@
+[Unit]
+Description=Configure IOTDIN-IMX8P Stack
+#Wants=serial-getty@.service iotd-imx8p-gw-config.service
+After=serial-getty@.service iotd-imx8p-gw-config.service
+
+[Service]
+Type=oneshot
+ExecStart=/opt/iotdin-imx8p/shell/stack.sh "config" "1"
+Restart=on-failure
+RestartSec=15
+
+[Install]
+WantedBy=multi-user.target

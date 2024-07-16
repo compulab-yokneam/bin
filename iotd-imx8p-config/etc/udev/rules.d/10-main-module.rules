@@ -1,0 +1,12 @@
+# TTYs
+SUBSYSTEM=="tty", KERNELS=="30880000.serial", DRIVERS=="imx-uart", SYMLINK+="ttyRS232"
+SUBSYSTEM=="tty", KERNELS=="30a60000.serial", DRIVERS=="imx-uart", SYMLINK+="ttyRS485"
+
+# CAN
+SUBSYSTEM=="net", ACTION=="add", DEVPATH=="/devices/platform/soc@0/30800000.bus/308d0000.can/net/can?", NAME="can0"
+
+# Cellular Modem
+SUBSYSTEM=="tty", ACTION=="add", DRIVERS=="option", DEVPATH=="/devices/platform/soc@0/32f10108.usb/38200000.usb/xhci-hcd.2.auto/usb3/3-1/3-1.4/3-1.4:1.0/ttyUSB*", SYMLINK+="ttyModemQCDM", MODE="0660"
+SUBSYSTEM=="tty", ACTION=="add", DRIVERS=="option", DEVPATH=="/devices/platform/soc@0/32f10108.usb/38200000.usb/xhci-hcd.2.auto/usb3/3-1/3-1.4/3-1.4:1.1/ttyUSB*", SYMLINK+="ttyModemGPS", MODE="0660"
+SUBSYSTEM=="tty", ACTION=="add", DRIVERS=="option", DEVPATH=="/devices/platform/soc@0/32f10108.usb/38200000.usb/xhci-hcd.2.auto/usb3/3-1/3-1.4/3-1.4:1.2/ttyUSB*", SYMLINK+="ttyModemAT1", MODE="0660"
+SUBSYSTEM=="tty", ACTION=="add", DRIVERS=="option", DEVPATH=="/devices/platform/soc@0/32f10108.usb/38200000.usb/xhci-hcd.2.auto/usb3/3-1/3-1.4/3-1.4:1.3/ttyUSB*", SYMLINK+="ttyModemAT2", MODE="0660"
