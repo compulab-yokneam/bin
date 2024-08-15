@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# gpiolib version
+gpioinfo --help | grep -q -- "--chip" && export c_opt="-c " || export c_opt=" "
+
 # Definitions
 
 # POD_DET GPIOs and chip
@@ -130,7 +133,7 @@ function detect_ie_type() {
 		;;
 	esac
 	# Read GPIOs
-	local ie_cfg=$(gpioget ${POD_DET_GPIO_CHIP} ${pod_det_gpios})
+	local ie_cfg=$(gpioget ${c_opt} ${POD_DET_GPIO_CHIP} ${pod_det_gpios})
 
 	# Determine IE type
 	local ie_type="N/A"
