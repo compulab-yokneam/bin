@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SERV_HOME=$(dirname $0)
+SERV_HOME=$(dirname $(readlink -e ${BASH_SOURCE[0]}))
 . ${SERV_HOME}/iotg-imx8plus-functions
 
 MIN_OFFSET=0
@@ -94,6 +94,6 @@ function main() {
 }
 
 #set -x
-SCR_NAME=$(basename $0)
+SCR_NAME=$(basename ${BASH_SOURCE[0]})
 main $@
 #set +x
