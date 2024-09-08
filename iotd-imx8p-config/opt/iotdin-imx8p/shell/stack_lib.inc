@@ -67,6 +67,8 @@ export ACCESS_BT=bluetooth
 export ACCESS_GPIO=gpiochip
 export ACCESS_DI=di.map
 export ACCESS_DO=do.map
+export ACCESS_BLKDEV=blkdev
+export ACCESS_NVME=${ACCESS_BLKDEV}
 export PIN_IB=0
 export PIN_IE=7
 export PIN_OB=8
@@ -85,4 +87,6 @@ export WIFI_HOME=/sys/class/net
 export WIFI_DEV_HOME=/sys/bus/pci/devices/0000:01:00.0/net
 export BT_HOME=/sys/class/bluetooth
 export BT_DEV_HOME=/sys/bus/usb/devices/3-1.1/3-1.1:1.0/bluetooth
+export NVME_DEV=nvme0n1
+export NVME_DEV_HOME=/dev
 

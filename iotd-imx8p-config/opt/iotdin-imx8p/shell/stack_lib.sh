@@ -18,8 +18,8 @@ function is_ifm_accessable() {
 	# Known IFM type
 	if [[ "${IFM_TYPE[@]}" =~ "${ifm_type}" ]]; then
 		# recalculate resources and decide
-		if [[ "${ifm_type}" == "WB" ]] ; then
-			# IFM-WB is accessable only when isntalled into the 1-st slot
+		if [[ "${ifm_type}" == "WB" || "${ifm_type}" == "NVME" ]] ; then
+			# IFM-<WB|NVME> is accessable only when isntalled into the 1-st slot
 			if [[ ${slot} -eq ${BIDX} ]] ; then
 				ret=1
 			fi
@@ -152,14 +152,21 @@ function ifm_grant_access() {
 				modprobe btusb > /dev/null 2>&1
 				sleep 1
 				if [[ -d ${WIFI_DEV_HOME} ]]; then
-					wlan=$(ls ${WIFI_DEV_HOME})
+					local wlan=$(ls ${WIFI_DEV_HOME})
 					[[ -L ${WIFI_HOME}/${wlan} ]] && ln -s ${WIFI_HOME}/${wlan} ${access_home}/${ACCESS_WLAN}
 				fi
 				if [[ -d ${BT_DEV_HOME} ]]; then
-					bt=$(ls ${BT_DEV_HOME})
+					local bt=$(ls ${BT_DEV_HOME})
 					[[ -L ${BT_HOME}/${bt} ]] && ln -s ${BT_HOME}/${bt} ${access_home}/${ACCESS_BT}
 				fi
 				;;
+			"NVME")
+				local nvme=${NVME_DEV_HOME}/${NVME_DEV}
+				if [[ -b ${nvme} ]]; then
+					ln -s ${nvme} ${access_home}/${ACCESS_NVME}
+				fi
+				;;
+
 			*)
 				;;
 		esac
@@ -421,8 +428,8 @@ function stack_manage_config() {
 					echo "IFM Stack misconfiguration detected!!!"
 					echo "Virtual slot '${STACK_SLOTS[${i}]}' :: IFM type '${ifm_type}'"
 					case ${STACK_IFM[${i}]} in
-						"WB")
-							echo "IFM-WB: can only be installed in virtual slot  ${STACK_SLOTS[${BIDX}]}"
+						"WB"|"NVME")
+							echo "IFM-${STACK_IFM[${i}]}: can only be installed in virtual slot ${STACK_SLOTS[${BIDX}]}"
 							;;
 						"ADC8")
 							echo "IFM-${STACK_IFM[${i}]}: there can be up-to ${IFM_LIMIT_ADC8} module(s)"

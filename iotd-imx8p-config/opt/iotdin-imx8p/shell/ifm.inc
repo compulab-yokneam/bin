@@ -30,6 +30,7 @@ export RMAP_RS232=$((1 << RMAP_USB1_OFF))
 export RMAP_DI8O8=$((1 << RMAP_I2C5_OFF | 1 << RMAP_I2C_ADDR_OFF | 1 << RMAP_GPIO_GR1_P1_OFF))
 export RMAP_ADC8=$((1 << RMAP_I2C6_OFF | 1 << RMAP_GPIO_GR2_P1_OFF | 1 << RMAP_GPIO_GR2_P2_OFF))
 export RMAP_WB=$((1 << RMAP_USB1_OFF | 1 << RMAP_PCIE_OFF))
+export RMAP_NVME=$((1 << RMAP_PCIE_OFF))
 
 # IFM ID/type stuff
 ## Known IDs
@@ -38,9 +39,10 @@ export IFM_ID_RS232=16#b
 export IFM_ID_DI8O8=16#c
 export IFM_ID_ADC8=16#d
 export IFM_ID_WB=16#e
+export IFM_ID_NVME=16#f
 
 export IFM_ID_FIRST=${IFM_ID_RS485}
-export IFM_ID_LAST=${IFM_ID_WB}
+export IFM_ID_LAST=${IFM_ID_NVME}
 
 ## Known types
 declare -a IFM_TYPE=(
@@ -49,6 +51,7 @@ declare -a IFM_TYPE=(
 		"DI8O8"
 		"ADC8"
 		"WB"
+		"NVME"
 )
 ## Additional pseudo-types
 export IFM_TYPE_INV="Inval"	# Invalid - W1 eeprom found, but does not contain a valid IFM ID
@@ -61,6 +64,7 @@ declare -A IFM_ID2TYPE=(
 		[c]="DI8O8"
 		[d]="ADC8"
 		[e]="WB"
+		[f]="NVME"
 )
 
 ##  IFM type-to-ID translation array
@@ -70,4 +74,5 @@ declare -A IFM_TYPE2ID=(
 		[DI8O8]="c"
 		[ADC8]="d"
 		[WB]="e"
+		[NVME]="f"
 )
