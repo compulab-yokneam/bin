@@ -54,10 +54,6 @@ export BPE_W1=w1_bus
 export BPE_W1_BM=master
 export BPE_W1_EEPROM=eeprom
 export BPE_W1_EEPROM_SHADOW=eeprom.raw
-export BPE_RES=resources
-export BPE_RES_ACQ=acquired
-export BPE_RES_IN=incoming
-export BPE_RES_OUT=outgoiug
 export BPE_IFM=type
 
 ### Frontplane Emulation home

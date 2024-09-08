@@ -1,9 +1,9 @@
 # Resource Map (RMAP) stuff
-export RMAP_PCIe_OFF=0
+export RMAP_PCIE_OFF=0
 export RMAP_USB1_OFF=1
 export RMAP_USB2_OFF=2
 export RMAP_USB3_OFF=3
-export RMAP_USB_MASK=$((1 << RMAP_USB1_OFF | 1 << RMAP_USB2_OFF | 1 << RMAP_USB3_OFF ))
+export RMAP_USB_MASK=$((1 << RMAP_USB1_OFF | 1 << RMAP_USB2_OFF | 1 << RMAP_USB3_OFF))
 
 export RMAP_SPI2_OFF=4
 export RMAP_I2C5_OFF=5
@@ -29,7 +29,7 @@ export RMAP_RS485=$((1 << RMAP_USB1_OFF))
 export RMAP_RS232=$((1 << RMAP_USB1_OFF))
 export RMAP_DI8O8=$((1 << RMAP_I2C5_OFF | 1 << RMAP_I2C_ADDR_OFF | 1 << RMAP_GPIO_GR1_P1_OFF))
 export RMAP_ADC8=$((1 << RMAP_I2C6_OFF | 1 << RMAP_GPIO_GR2_P1_OFF | 1 << RMAP_GPIO_GR2_P2_OFF))
-export RMAP_WB=$((1 << RMAP_USB1_OFF | 1 << RMAP_PCIe_OFF))
+export RMAP_WB=$((1 << RMAP_USB1_OFF | 1 << RMAP_PCIE_OFF))
 
 # IFM ID/type stuff
 ## Known IDs

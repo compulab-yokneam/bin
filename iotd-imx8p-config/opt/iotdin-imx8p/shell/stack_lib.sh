@@ -11,8 +11,7 @@ function is_ifm_accessable() {
 	local ret=0
 	# Validate slot index
 	if [[ ${slot} -gt ${EIDX} || ${slot} -lt ${BIDX} ]]; then
-    	echo ${ret}
-    	return 1;
+		return 0
 	fi
 
 	local ifm_type=${STACK_IFM[${slot}]}
@@ -24,8 +23,7 @@ function is_ifm_accessable() {
 			if [[ ${slot} -eq ${BIDX} ]] ; then
 				ret=1
 			fi
-			echo ${ret}
-			return
+			return ${ret}
 		fi
 		
 		if [[ "${ifm_type}" == "RS"* ]] ; then
@@ -44,7 +42,7 @@ function is_ifm_accessable() {
 		fi
 	fi
 
-	echo ${ret}
+	return ${ret}
 }
 
 function ifm_cleanup() {
@@ -120,8 +118,6 @@ function ifm_grant_access() {
 					t=${TTY_DEV_HOME}/${TTY_DEV_PTRN}_$((ifm_num-1))_${p}
 					if [[ -L ${t} && -c $(readlink -f ${t}) ]]; then
 						ln -s ${t} ${access_home}/${ACCESS_TTY}${p}
-						# alternative symbolic link style:
-						#ln -s ${t} ${access_home}/${ACCESS_TTY}_${STACK_SLOTS[${slot}]}_${STACK_IFM[${slot}]}_${p}
 					fi
 				done
 				;;
@@ -175,9 +171,11 @@ function ifm_grant_access() {
 function ifm_add() {
 	# Slot index
 	local slot=${1}
+	local ret
 	# Validate slot index
 	[[ ${slot} -lt ${EIDX} || ${slot} -gt ${BIDX} ]] || return 1;
-	if [[ $(is_ifm_accessable ${slot}) -eq 0 ]]; then
+	is_ifm_accessable ${slot} && ret=$? || ret=$?
+	if [[ ${ret} -eq 0 ]]; then
 		# remove all slots starting from this one
 		for s in $(seq ${slot} ${EIDX} | xargs -x) ; do
 			ifm_cleanup ${s}
@@ -209,10 +207,8 @@ function ifm_add() {
 function is_slot_empty() {
 	# Slot index
 	local slot=${1}
-	local ret=0
 	# Validate slot index
 	if [[ ${slot} -gt ${EIDX} || ${slot} -lt ${BIDX} ]]; then
-		echo ${ret}
 		return 1;
 	fi
 
@@ -222,10 +218,10 @@ function is_slot_empty() {
 	local ifm_type=${STACK_IFM[${slot}]}
 	# Known IFM type
 	if [[ "${IFM_TYPE_ND}" == "${ifm_type}" ]]; then
-		ret=1
+		return 1
+	else
+		return 0
 	fi
-
-	echo ${ret}
 }
 
 function slot_cleanup() {
@@ -263,22 +259,12 @@ function slot_add() {
 	rm -rf {w1_dir}
 	mkdir -p ${w1_dir}
 	if [[ "${ifm_type}" == "${IFM_TYPE_ND}" ]]; then
-		#ln -s ${DUMMY_PATH} ${w1_dir}/${BPE_W1_BM}
+		### w1 eeprom stub
 		ln -s ${DUMMY_PATH} ${w1_dir}/${BPE_W1_EEPROM}
 	else
-		### w1 bus master
-		#ln -s ${W1_BUS}/w1_bus_master${slot} ${w1_dir}/${BPE_W1_BM}
 		### w1 eeprom
-		#ln -s $(readlink -f ${w1_dir}/${BPE_W1_BM})/${STACK_W1_EEPROM[${slot}]}/eeprom ${w1_dir}/${BPE_W1_EEPROM}
 		ln -s ${W1_BUS}/w1_bus_master${slot}/${STACK_W1_EEPROM[${slot}]}/eeprom ${w1_dir}/${BPE_W1_EEPROM}
 	fi
-
-	## Create and populate resource info
-	[[ ${STACK_ACCOUNT_RESOURCES} -eq 1 ]] || return 0
-	local res_dir=${slot_home}/${BPE_RES}
-	rm -rf ${res_dir}
-	mkdir -p ${res_dir} #/${BPE_RES_ACQ} ${res_dir}/${BPE_RES_IN} ${res_dir}/${BPE_RES_OUT}
-	touch ${res_dir}/${BPE_RES_ACQ} ${res_dir}/${BPE_RES_IN} ${res_dir}/${BPE_RES_OUT}
 }
 
 function slot_probe() {
@@ -401,6 +387,7 @@ function stack_manage_config() {
 	local slot_list=$(seq ${fslot} ${tslot} | xargs -x)
 	local ifm_type=${IFM_TYPE_ND}
 	local last_valid=${EIDX}
+	local ret
 
 	for i in ${slot_list}; do
 		local slot_home=${BPE_HOME}/${STACK_SLOTS[${i}]}
@@ -409,52 +396,54 @@ function stack_manage_config() {
 		fi
 		ifm_type=$(ls ${slot_home} | grep "${BPE_IFM}\.")
 		STACK_IFM[${i}]="${ifm_type##*.}"
-		if [[ $(is_ifm_accessable ${i}) -eq 1 ]]; then
+		is_ifm_accessable ${i} && ret=$? || ret=$?
+		if [[ ${ret} -eq 1 ]]; then
 			ifm_accounting_inc ${i}
-		elif [[ $(is_slot_empty ${i}) -eq 1 ]]; then
-			# So far stack configuration is valid (stack_manageable)
-			# And the current slot is empty: valid configuration
-			last_valid=$((i-1))
-			for s in $(seq ${i} ${EIDX} | xargs -x) ; do
-				ifm_cleanup ${s}
-			done
-			break
 		else
-			#cmd_sos
-			# Either invalid or non-manageable IFM is found in the current slot
-			for s in $(seq ${BIDX} ${EIDX} | xargs -x) ; do
-				ifm_cleanup ${s}
-			done
-			if [[ ${verbose} -eq 1 ]]; then
-				local cutline="###############################################################"
-				ifm_type=${STACK_IFM[${i}]}
-				printf "\n%s\n" ${cutline}
-				echo "IFM Stack misconfiguration detected!!!"
-				echo "Virtual slot '${STACK_SLOTS[${i}]}' :: IFM type '${ifm_type}'"
-				case ${STACK_IFM[${i}]} in
-					"WB")
-						echo "IFM-WB: can only be installed in virtual slot  ${STACK_SLOTS[${BIDX}]}"
-						;;
-					"ADC8")
-						echo "IFM-${STACK_IFM[${i}]}: there can be up-to ${IFM_LIMIT_ADC8} module(s)"
-						;;
-					"DI8O8")
-						echo "IFM-${STACK_IFM[${i}]}: there can be up-to ${IFM_LIMIT_DI8O8} module(s)"
-						;;
-					"RS232" | "RS485")
-						echo "IFM-${STACK_IFM[${i}]}: there can be up-to ${IFM_LIMIT_RSx} (in total) modules of types IFM-<WB|RS232|RS485>"
-						;;
-					"${IFM_TYPE_INV}")
-						echo "Populate the IFM Stack with well-defined IFMs only!"
-						echo "Refer to the Stacking Rules for more info."
-						;;
-				esac
-				printf "%s\n\n" ${cutline}
+			is_slot_empty ${i} && ret=$? || ret=$?
+			if [[ ${ret} -eq 1 ]]; then
+				# So far stack configuration is valid (stack_manageable)
+				# And the current slot is empty: valid configuration
+				last_valid=$((i-1))
+				for s in $(seq ${i} ${EIDX} | xargs -x) ; do
+					ifm_cleanup ${s}
+				done
+				break
+			else
+				# Either invalid or non-manageable IFM is found in the current slot
+				for s in $(seq ${BIDX} ${EIDX} | xargs -x) ; do
+					ifm_cleanup ${s}
+				done
+				if [[ ${verbose} -eq 1 ]]; then
+					local cutline="###############################################################"
+					ifm_type=${STACK_IFM[${i}]}
+					printf "\n%s\n" ${cutline}
+					echo "IFM Stack misconfiguration detected!!!"
+					echo "Virtual slot '${STACK_SLOTS[${i}]}' :: IFM type '${ifm_type}'"
+					case ${STACK_IFM[${i}]} in
+						"WB")
+							echo "IFM-WB: can only be installed in virtual slot  ${STACK_SLOTS[${BIDX}]}"
+							;;
+						"ADC8")
+							echo "IFM-${STACK_IFM[${i}]}: there can be up-to ${IFM_LIMIT_ADC8} module(s)"
+							;;
+						"DI8O8")
+							echo "IFM-${STACK_IFM[${i}]}: there can be up-to ${IFM_LIMIT_DI8O8} module(s)"
+							;;
+						"RS232" | "RS485")
+							echo "IFM-${STACK_IFM[${i}]}: there can be up-to ${IFM_LIMIT_RSx} (in total) modules of types IFM-<WB|RS232|RS485>"
+							;;
+						"${IFM_TYPE_INV}")
+							echo "Populate the IFM Stack with well-defined IFMs only!"
+							echo "Refer to the Stacking Rules for more info."
+							;;
+					esac
+					printf "%s\n\n" ${cutline}
+				fi
+				return 1
 			fi
-			return 1
 		fi
 	done
-	#cmd_ok
 	if [[ ${verbose} -eq 1 ]]; then
 		echo "A valid and fully accessable IFM Stack is detected"
 		slot_show ${BIDX} ${last_valid}

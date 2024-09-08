@@ -69,10 +69,12 @@ function stack_show_nonepmty() {
 	local slot_list=$(seq ${fslot} ${tslot} | xargs -x)
 	local ifm_type=${IFM_TYPE_ND}
 	local last=${EIDX}
+	local ret
 
 	stack_walkthru_backplane
 	for i in ${slot_list}; do
-		if [[ $(is_slot_empty ${i}) -eq 1 ]]; then
+		is_slot_empty ${i} && ret=$? || ret=$?
+		if [[ ${ret} -eq 1 ]]; then
 			# So far stack configuration is valid (stack_manageable)
 			# And the current slot is empty: valid configuration
 			last=$((i-1))
@@ -158,7 +160,7 @@ function do_slot() {
 			;;
 		esac
 	done
-	command -v slot_${1} &>/dev/null && slot_${1} ${SLOT} ${SLOT} || do_dummy "slot_${1}"
+	command -v slot_${1} &>/dev/null && (slot_${1} ${SLOT} ${SLOT} || true) || do_dummy "slot_${1}"
 }
 
 function stack_info_backplane() {
@@ -192,8 +194,7 @@ function stack_info() {
 			;;
 		esac
 	done
-	
-	command -v stack_info_${info} &>/dev/null && stack_info_${info} || do_dummy "stack_info_${info}"
+	command -v stack_info_${info} &>/dev/null && (stack_info_${info} || true) || do_dummy "stack_info_${info}"
 }
 
 #############################################################################
@@ -233,7 +234,7 @@ function stack_manage() {
 # Wrapper for "stack" cmd's
 #############################################################################
 function do_stack() {
-	command -v stack_${1} &>/dev/null && stack_${1} || do_dummy "stack_${1}"
+	command -v stack_${1} &>/dev/null && (stack_${1} || true) || do_dummy "stack_${1}"
 }
 
 ### Main
