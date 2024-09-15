@@ -3,16 +3,22 @@
 export GW_HOME=/run/${IOTDIN}/gateway
 export GW_ACCESS=${GW_HOME}/access
 
-## Modem
-export GW_ACCESS_MODEM_HOME=${GW_ACCESS}/modem
+## Connectivity/Network
+export GW_ACCESS_NET=${GW_ACCESS}/network
+### WiFI/BT
+export GW_ACCESS_WLAN=wlan
+export GW_ACCESS_BT=bluetooth
+export GW_WIFI_HOME=/sys/class/net
+export GW_WIFI_DEV_HOME=/sys/bus/mmc/devices/mmc1:0001/mmc1:0001:1/net
+export GW_BT_HOME=/sys/class/bluetooth
+export GW_BT_DEV_HOME=/sys/bus/mmc/devices/mmc1:0001/mmc1:0001:2/bluetooth
+### Modem
+export GW_ACCESS_MODEM_HOME=${GW_ACCESS_NET}/modem
 export GW_MODEM_TTY=ttyModem
 export GW_MODEM_AT1=at1
 export GW_MODEM_AT2=at2
 export GW_MODEM_QCDM=qcdm
 export GW_MODEM_GPS=gps
-
-## WiFI/BT
-# TODO
 
 ## LEDs
 export GW_ACCESS_LED_HOME=${GW_ACCESS}/leds

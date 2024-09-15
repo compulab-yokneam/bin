@@ -19,15 +19,27 @@ function gw_grant_access() {
 	rm -rf ${access_home}
 	mkdir -p ${access_home}
 
-	# Modem
+	# Connectivity/Network
+	mkdir -p ${GW_ACCESS_NET}
+	## WiFi/BT
+	modprobe mwifiex_sdio > /dev/null 2>&1
+	modprobe btmrvl_sdio > /dev/null 2>&1
+	sleep 1
+	if [[ -d ${GW_WIFI_DEV_HOME} ]]; then
+		local wlan=$(ls ${GW_WIFI_DEV_HOME})
+		[[ -L ${GW_WIFI_HOME}/${wlan} ]] && ln -s ${GW_WIFI_HOME}/${wlan} ${GW_ACCESS_NET}/${GW_ACCESS_WLAN}
+	fi
+	if [[ -d ${GW_BT_DEV_HOME} ]]; then
+		local bt=$(ls ${GW_BT_DEV_HOME})
+		[[ -L ${GW_BT_HOME}/${bt} ]] && ln -s ${GW_BT_HOME}/${bt} ${GW_ACCESS_NET}/${GW_ACCESS_BT}
+	fi
+
+	## Modem
 	mkdir -p ${GW_ACCESS_MODEM_HOME}
 	[[ -L /dev/${GW_MODEM_TTY}${GW_MODEM_AT1^^} ]]  && ln -s /dev/${GW_MODEM_TTY}${GW_MODEM_AT1^^} ${GW_ACCESS_MODEM_HOME}/${GW_MODEM_AT1}
 	[[ -L /dev/${GW_MODEM_TTY}${GW_MODEM_AT2^^} ]]  && ln -s /dev/${GW_MODEM_TTY}${GW_MODEM_AT2^^} ${GW_ACCESS_MODEM_HOME}/${GW_MODEM_AT2}
 	[[ -L /dev/${GW_MODEM_TTY}${GW_MODEM_GPS^^} ]]  && ln -s /dev/${GW_MODEM_TTY}${GW_MODEM_GPS^^} ${GW_ACCESS_MODEM_HOME}/${GW_MODEM_GPS}
 	[[ -L /dev/${GW_MODEM_TTY}${GW_MODEM_QCDM^^} ]] && ln -s /dev/${GW_MODEM_TTY}${GW_MODEM_QCDM^^} ${GW_ACCESS_MODEM_HOME}/${GW_MODEM_QCDM}
-
-	# WiFi/BT
-	## TODO
 
 	# LEDs
 	mkdir -p ${GW_ACCESS_LED_HOME}
@@ -36,7 +48,7 @@ function gw_grant_access() {
 			[[ -L ${LED_HOME}/${color^}"_"${led} ]]  && ln -s ${LED_HOME}/${color^}"_"${led} ${GW_ACCESS_LED_HOME}/${color}"_"${led,,}
 		done
 	done
-	
+
 	# Industrial I/O
 	mkdir -p ${GW_ACCESS_IO_HOME}
 	## RS232
