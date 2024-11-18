@@ -66,7 +66,7 @@ function main() {
 	# Check parameters
 	check_params_out ${slot} ${offset}
 	# Read state
-	gpioset ${D_CHIP[${offset}]} ${D_PIN[${offset}]}=${state}
+	gpioset ${c_opt} ${D_CHIP[${offset}]} ${D_PIN[${offset}]}=${state}
 	return $?
 }
 

@@ -60,7 +60,7 @@ function main() {
 	# Check parameters
 	check_params_in ${slot} ${offset}
 	# Read state
-	state=$(gpioget ${D_CHIP[${offset}]}  ${D_PIN[${offset}]})
+	state=$(gpioget ${c_opt} ${D_CHIP[${offset}]}  ${D_PIN[${offset}]})
 	ret=$?
 	[[ ${ret} -ne 0 ]] || echo ${state}
 	return ${ret}
