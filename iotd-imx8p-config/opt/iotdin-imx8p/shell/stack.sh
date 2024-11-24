@@ -74,7 +74,7 @@ function stack_show_nonepmty() {
 	stack_walkthru_backplane
 	for i in ${slot_list}; do
 		is_slot_empty ${i} && ret=$? || ret=$?
-		if [[ ${ret} -eq 1 ]]; then
+		if [[ ${ret} -eq ${SLOT_EMPTY} ]]; then
 			# So far stack configuration is valid (stack_manageable)
 			# And the current slot is empty: valid configuration
 			last=$((i-1))

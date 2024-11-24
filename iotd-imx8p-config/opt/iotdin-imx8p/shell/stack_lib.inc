@@ -90,3 +90,12 @@ export BT_DEV_HOME=/sys/bus/usb/devices/3-1.1/3-1.1:1.0/bluetooth
 export NVME_DEV=nvme0n1
 export NVME_DEV_HOME=/dev
 
+# Return Values and Error Codes
+export SLOT_EMPTY=0
+export SLOT_NONEMPTY=1
+export RET_OK=0
+export ERR_SLOT_NUM=1
+export ERR_PCIE_SLOT=2
+export ERR_LIMIT=3
+export ERR_LIMIT_USB=4
+export ERR_INVAL=5

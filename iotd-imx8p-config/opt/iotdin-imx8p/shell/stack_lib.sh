@@ -8,41 +8,42 @@
 function is_ifm_accessable() {
 	# Slot index
 	local slot=${1}
-	local ret=0
+	local ret=
 	# Validate slot index
 	if [[ ${slot} -gt ${EIDX} || ${slot} -lt ${BIDX} ]]; then
-		return 0
+		return ${ERR_SLOT_NUM}
 	fi
 
 	local ifm_type=${STACK_IFM[${slot}]}
 	# Known IFM type
 	if [[ "${IFM_TYPE[@]}" =~ "${ifm_type}" ]]; then
 		# recalculate resources and decide
-		if [[ "${ifm_type}" == "WB" || "${ifm_type}" == "NVME" ]] ; then
-			# IFM-<WB|NVME> is accessable only when isntalled into the 1-st slot
-			if [[ ${slot} -eq ${BIDX} ]] ; then
-				ret=1
+		## Is it PCIe device?
+		if [[ "${IFM_RES_PCIE[@]}" =~ "${ifm_type}" ]] ; then
+			# PCIe based IFM-<WB|NVME|...> is accessable only when installed into the 1-st slot
+			if [[ ${slot} -ne ${BIDX} ]] ; then
+				return ${ERR_PCIE_SLOT}
 			fi
-			return ${ret}
+			[[ "${IFM_RES_USB[@]}" =~ "${ifm_type}" ]] || return ${RET_OK}
 		fi
-		
-		if [[ "${ifm_type}" == "RS"* ]] ; then
-			# RS232 and RS485 share same resources
-			ifm_type="RSx"
+
+		## Is it USB device?
+		if [[ "${IFM_RES_USB[@]}" =~ "${ifm_type}" ]] ; then
+			ifm_type="USB"
 		fi
+		## USB or other type
 		declare -n ifm_arr=IFM_ARR_${ifm_type}
 		declare -n ifm_limit=IFM_LIMIT_${ifm_type}
-		if [[ "${ifm_type}" == "RSx" ]] ; then
-			ifm_limit=$(( ifm_limit - ${#IFM_ARR_WB[@]} ))
-		fi
 		local ifm_num=${#ifm_arr[@]}
 		
 		if [[ ${ifm_num} -lt ${ifm_limit}  ]]; then
-			ret=1
+			return ${RET_OK}
 		fi
+		[[ "${ifm_type}" -eq "USB" ]] && ret=${ERR_LIMIT_USB} || ret=${ERR_LIMIT}
+		return ${ret}
 	fi
 
-	return ${ret}
+	return ${ERR_INVAL}
 }
 
 function ifm_cleanup() {
@@ -57,14 +58,15 @@ function ifm_cleanup() {
 
 function ifm_accounting_reset() {
 	for t in ${IFM_TYPE[@]} ; do
-		if [[ "${t}" == "RS"* ]] ; then
-			# RS232 and RS485 share same resources
-			t="RSx"
-		fi
+		[[ "${IFM_RES_PCIE[@]}" =~ "${t}" ]] && continue
+		[[ "${IFM_RES_USB[@]}" =~ "${t}" ]] && continue
+
 		declare -n ifm_arr=IFM_ARR_${t}
 		#echo "${t}: ifm_arr='${ifm_arr[@]}'"
 		unset ifm_arr
 	done
+	unset IFM_ARR_PCIE
+	unset IFM_ARR_USB
 }
 
 function ifm_accounting_inc() {
@@ -76,20 +78,33 @@ function ifm_accounting_inc() {
 	# Known IFM type
 	if [[ "${IFM_TYPE[@]}" =~ "${ifm_type}" ]]; then
 		# recalculate resources and decide
-		if [[ "${ifm_type}" == "RS"* ]] ; then
-			# RS232 and RS485 share same resources
-			ifm_type="RSx"
+		if [[ "${IFM_RES_PCIE[@]}" =~ "${ifm_type}" ]] ; then
+			idx=${#IFM_ARR_PCIE[@]}
+			if [[ ${idx} -ge ${IFM_LIMIT_PCIE} ]] ; then
+				return 1
+			fi
+			IFM_ARR_PCIE[${idx}]=${slot}
+			[[ "${IFM_RES_USB[@]}" =~ "${ifm_type}" ]] || return 0
 		fi
+		if [[ "${IFM_RES_USB[@]}" =~ "${ifm_type}" ]] ; then
+			idx=${#IFM_ARR_USB[@]}
+			if [[ ${idx} -ge ${IFM_LIMIT_USB} ]] ; then
+				return 1
+			fi
+			IFM_ARR_USB[${idx}]=${slot}
+			return 0
+		fi
+
 		declare -n ifm_arr=IFM_ARR_${ifm_type}
 		declare -n ifm_limit=IFM_LIMIT_${ifm_type}
 		local idx=${#ifm_arr[@]}
-		if [[ ${idx} -lt ${ifm_limit}  ]]; then
-			ifm_arr[${idx}]=${slot}
-			return 0
+		if [[ ${idx} -ge ${ifm_limit}  ]]; then
+			return 1
 		fi
+		ifm_arr[${idx}]=${slot}
 	fi
 
-	return 1
+	return 0
 }
 
 function ifm_grant_access() {
@@ -102,22 +117,22 @@ function ifm_grant_access() {
 	# Known IFM type
 	if [[ "${IFM_TYPE[@]}" =~ "${ifm_type}" ]]; then
 		# recalculate resources and decide
-		if [[ "${ifm_type}" == "RS"* ]] ; then
-			# RS232 and RS485 share same resources
-			ifm_type="RSx"		
-		fi
 		declare -n ifm_arr=IFM_ARR_${ifm_type}
 		local ifm_num=${#ifm_arr[@]}
 		local access_home=${FPE_HOME}/${STACK_SLOTS[${slot}]}/${FPE_ACCESS}
 
 		case ${ifm_type} in
-			"RSx")
+			"RS232"|"RS485")
 				# Because of USB bus shifting
-				ifm_num=$(( ifm_num + ${#IFM_ARR_WB[@]} ))
-				for p in {0..3}; do
-					t=${TTY_DEV_HOME}/${TTY_DEV_PTRN}_$((ifm_num-1))_${p}
-					if [[ -L ${t} && -c $(readlink -f ${t}) ]]; then
-						ln -s ${t} ${access_home}/${ACCESS_TTY}${p}
+				for (( i=0 ; i<${#IFM_ARR_USB[@]} ; i++ )) ; do
+					if [[ "${IFM_ARR_USB[${i}]}" -eq "${slot}" ]] ; then
+						for p in {0..3}; do
+							t=${TTY_DEV_HOME}/${TTY_DEV_PTRN}_${i}_${p}
+							if [[ -L ${t} && -c $(readlink -f ${t}) ]]; then
+								ln -s ${t} ${access_home}/${ACCESS_TTY}${p}
+							fi
+						done
+						break
 					fi
 				done
 				;;
@@ -182,7 +197,7 @@ function ifm_add() {
 	# Validate slot index
 	[[ ${slot} -lt ${EIDX} || ${slot} -gt ${BIDX} ]] || return 1;
 	is_ifm_accessable ${slot} && ret=$? || ret=$?
-	if [[ ${ret} -eq 0 ]]; then
+	if [[ ${ret} -ne ${RET_OK} ]]; then
 		# remove all slots starting from this one
 		for s in $(seq ${slot} ${EIDX} | xargs -x) ; do
 			ifm_cleanup ${s}
@@ -216,7 +231,7 @@ function is_slot_empty() {
 	local slot=${1}
 	# Validate slot index
 	if [[ ${slot} -gt ${EIDX} || ${slot} -lt ${BIDX} ]]; then
-		return 1;
+		return ${SLOT_EMPTY};
 	fi
 
 	# Probe the slot once again - for being...
@@ -225,9 +240,9 @@ function is_slot_empty() {
 	local ifm_type=${STACK_IFM[${slot}]}
 	# Known IFM type
 	if [[ "${IFM_TYPE_ND}" == "${ifm_type}" ]]; then
-		return 1
+		return ${SLOT_EMPTY}
 	else
-		return 0
+		return ${SLOT_NONEMPTY}
 	fi
 }
 
@@ -394,7 +409,7 @@ function stack_manage_config() {
 	local slot_list=$(seq ${fslot} ${tslot} | xargs -x)
 	local ifm_type=${IFM_TYPE_ND}
 	local last_valid=${EIDX}
-	local ret
+	local ret=
 
 	for i in ${slot_list}; do
 		local slot_home=${BPE_HOME}/${STACK_SLOTS[${i}]}
@@ -404,11 +419,12 @@ function stack_manage_config() {
 		ifm_type=$(ls ${slot_home} | grep "${BPE_IFM}\.")
 		STACK_IFM[${i}]="${ifm_type##*.}"
 		is_ifm_accessable ${i} && ret=$? || ret=$?
-		if [[ ${ret} -eq 1 ]]; then
+		if [[ ${ret} -eq ${RET_OK} ]]; then
 			ifm_accounting_inc ${i}
 		else
-			is_slot_empty ${i} && ret=$? || ret=$?
-			if [[ ${ret} -eq 1 ]]; then
+			local empty=
+			is_slot_empty ${i} && empty=$? || empty=$?
+			if [[ ${empty} -eq ${SLOT_EMPTY} ]]; then
 				# So far stack configuration is valid (stack_manageable)
 				# And the current slot is empty: valid configuration
 				last_valid=$((i-1))
@@ -427,22 +443,26 @@ function stack_manage_config() {
 					printf "\n%s\n" ${cutline}
 					echo "IFM Stack misconfiguration detected!!!"
 					echo "Virtual slot '${STACK_SLOTS[${i}]}' :: IFM type '${ifm_type}'"
-					case ${STACK_IFM[${i}]} in
-						"WB"|"NVME")
+					case ${ret} in
+						"${ERR_PCIE_SLOT}")
 							echo "IFM-${STACK_IFM[${i}]}: can only be installed in virtual slot ${STACK_SLOTS[${BIDX}]}"
 							;;
-						"ADC8")
-							echo "IFM-${STACK_IFM[${i}]}: there can be up-to ${IFM_LIMIT_ADC8} module(s)"
+						"${ERR_LIMIT}")
+							if [[ "${IFM_RES_USB[@]}" =~ "${ifm_type}" ]] ; then
+								echo "IFM-${ifm_type}: there can be up-to ${ifm_limit} module(s)"
+
+							fi
 							;;
-						"DI8O8")
-							echo "IFM-${STACK_IFM[${i}]}: there can be up-to ${IFM_LIMIT_DI8O8} module(s)"
+						"${ERR_LIMIT_USB}")
+							printf -v list "%s|" ${IFM_RES_USB[@]}
+							echo "IFM-${ifm_type}: there can be up-to ${IFM_LIMIT_USB} (in total) modules of types IFM-<${list%?}>"
 							;;
-						"RS232" | "RS485")
-							echo "IFM-${STACK_IFM[${i}]}: there can be up-to ${IFM_LIMIT_RSx} (in total) modules of types IFM-<WB|RS232|RS485>"
-							;;
-						"${IFM_TYPE_INV}")
+						"${ERR_INVAL}")
 							echo "Populate the IFM Stack with well-defined IFMs only!"
 							echo "Refer to the Stacking Rules for more info."
+							;;
+						*)
+							echo "Unexpected error: refer to the Stacking Rules, and double check the Stack. Try again later..."
 							;;
 					esac
 					printf "%s\n\n" ${cutline}
