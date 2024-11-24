@@ -36,7 +36,7 @@ function do_dummy() {
 	echo "$(basename ${0}): $@: command not found"
 }
 
-export DELIM_LINE="+-------"
+export DELIM_LINE="+--------"
 
 function slot_show() {
 	local fslot=${1:-${BIDX}}								# 1-st slot
@@ -49,11 +49,11 @@ function slot_show() {
 	# Header - delimiter
 	printf "${DELIM_LINE}" ; printf -- "${DELIM_LINE}%.0s" ${STACK_SLOTS[@]:${fslot}:${cslot}} ; printf "+\n";
 	# Header - data - slot indexes
-	printf "| %-6s" "Slot" ; printf "|   %-4s"  ${STACK_SLOTS[@]:${fslot}:${cslot}} ; printf  "|\n";
+	printf "|  %-6s" "Slot" ; printf "|   %-5s"  ${STACK_SLOTS[@]:${fslot}:${cslot}} ; printf  "|\n";
 	# Intermediate - delimiter
 	printf "${DELIM_LINE}" ; printf -- "${DELIM_LINE}%.0s" ${STACK_SLOTS[@]:${fslot}:${cslot}} ; printf "+\n";
 	# Intermediate - data
-	printf "| %-6s" "IFM" ; printf "| %-6s" ${STACK_IFM[@]:${fslot}:${cslot}} ; printf "|\n";
+	printf "|  %-6s" "IFM" ; printf "| %-7s" ${STACK_IFM[@]:${fslot}:${cslot}} ; printf "|\n";
 	# Footer - delimiter
 	printf "${DELIM_LINE}" ; printf -- "${DELIM_LINE}%.0s" ${STACK_SLOTS[@]:${fslot}:${cslot}} ; printf "+\n";
 	printf "\n"
