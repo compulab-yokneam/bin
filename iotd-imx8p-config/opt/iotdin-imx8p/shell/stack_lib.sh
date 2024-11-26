@@ -181,7 +181,14 @@ function ifm_grant_access() {
 					ln -s ${nvme} ${access_home}/${ACCESS_NVME}
 				fi
 				;;
-
+			"NETX100")
+				modprobe uio_netx > /dev/null 2>&1
+				sleep 1
+				if [[ -d ${NETX100_DEV_HOME} ]]; then
+					local uio=$(ls ${NETX100_DEV_HOME})
+					[[ -L ${UIO_HOME}/${uio} ]] && ln -s ${uio} ${access_home}/${ACCESS_UIO}
+				fi
+				;;
 			*)
 				;;
 		esac

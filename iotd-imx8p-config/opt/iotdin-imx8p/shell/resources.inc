@@ -15,6 +15,7 @@ declare -i IFM_LIMIT_USB=3
 declare -a IFM_RES_PCIE=(
 		"WB"
 		"NVME"
+		"NETX100"
 )
 declare -a IFM_ARR_PCIE=()
 declare -i IFM_LIMIT_PCIE=1

@@ -69,6 +69,7 @@ export ACCESS_DI=di.map
 export ACCESS_DO=do.map
 export ACCESS_BLKDEV=blkdev
 export ACCESS_NVME=${ACCESS_BLKDEV}
+export ACCESS_NETX100=uio
 export PIN_IB=0
 export PIN_IE=7
 export PIN_OB=8
@@ -89,6 +90,8 @@ export BT_HOME=/sys/class/bluetooth
 export BT_DEV_HOME=/sys/bus/usb/devices/3-1.1/3-1.1:1.0/bluetooth
 export NVME_DEV=nvme0n1
 export NVME_DEV_HOME=/dev
+export UIO_HOME=/sys/class/uio
+export NETX100_DEV_HOME=/sys/bus/pci/devices/0000:02:00.0/uio
 
 # Return Values and Error Codes
 export SLOT_EMPTY=0
