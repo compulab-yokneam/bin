@@ -8,6 +8,7 @@ declare -a IFM_RES_USB=(
 		"RS485"
 		"RS232"
 		"WB"
+		"MESH"
 )
 declare -a IFM_ARR_USB=()
 declare -i IFM_LIMIT_USB=3

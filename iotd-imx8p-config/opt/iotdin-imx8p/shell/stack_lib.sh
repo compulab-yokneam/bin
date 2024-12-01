@@ -171,8 +171,12 @@ function ifm_grant_access() {
 					[[ -L ${WIFI_HOME}/${wlan} ]] && ln -s ${WIFI_HOME}/${wlan} ${access_home}/${ACCESS_WLAN}
 				fi
 				if [[ -d ${BT_DEV_HOME} ]]; then
-					local bt=$(ls ${BT_DEV_HOME})
-					[[ -L ${BT_HOME}/${bt} ]] && ln -s ${BT_HOME}/${bt} ${access_home}/${ACCESS_BT}
+					local idvendor=$(cat ${BT_DEVID_HOME}/${IDVENDOR})
+					local idprod=$(cat ${BT_DEVID_HOME}/${IDPROD})
+					if [[ "${idvendor,,}" == "${BT_USB_IDVENDOR,,}" && "${idprod,,}" == "${BT_USB_IDPROD,,}" ]] ; then
+						local bt=$(ls ${BT_DEV_HOME})
+						[[ -L ${BT_HOME}/${bt} ]] && ln -s ${BT_HOME}/${bt} ${access_home}/${ACCESS_BT}
+					fi
 				fi
 				;;
 			"NVME")
@@ -188,6 +192,24 @@ function ifm_grant_access() {
 					local uio=$(ls ${NETX100_DEV_HOME})
 					[[ -L ${UIO_HOME}/${uio} ]] && ln -s ${uio} ${access_home}/${ACCESS_UIO}
 				fi
+				;;
+			"MESH")
+				modprobe btusb > /dev/null 2>&1
+				sleep 1
+				for (( i=0 ; i<${#IFM_ARR_USB[@]} ; i++ )) ; do
+					if [[ "${IFM_ARR_USB[${i}]}" -eq "${slot}" ]] ; then
+						local dev_home=${MESH_DEV_PREFIX}$((i+1))${MESH_DEV_SUFFIX}
+						if [[ -d ${dev_home} ]]; then
+							local idvendor=$(cat ${dev_home}/../../${IDVENDOR})
+							local idprod=$(cat ${dev_home}/../../${IDPROD})
+							if [[ "${idvendor,,}" == "${MESH_USB_IDVENDOR,,}" && "${idprod,,}" == "${MESH_USB_IDPROD,,}" ]] ; then
+								local mesh=$(ls ${dev_home})
+								[[ -L ${MESH_HOME}/${mesh} ]] && ln -s ${MESH_HOME}/${mesh} ${access_home}/${ACCESS_MESH}
+							fi
+						fi
+						break
+					fi
+				done
 				;;
 			*)
 				;;
