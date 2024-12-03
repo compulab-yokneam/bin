@@ -17,6 +17,7 @@ declare -a IFM_RES_PCIE=(
 		"WB"
 		"NVME"
 		"NETX100"
+		"5G"
 )
 declare -a IFM_ARR_PCIE=()
 declare -i IFM_LIMIT_PCIE=1
