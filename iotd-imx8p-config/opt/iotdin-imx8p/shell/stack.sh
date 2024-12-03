@@ -100,11 +100,12 @@ function slot_dump() {
 	local tslot=${2:-${EIDX}}	# To slot
 	local slot_list=$(seq ${fslot} ${tslot} | xargs -x)
 	local EEPROM_DEV=
+	local s=
 
 	slot_probe ${fslot} ${tslot} 0 # Do not be verbose
 
-	for i in ${slot_list}; do
-		EEPROM_DEV="$(_slot_get_eeprom ${i})"
+	for s in ${slot_list}; do
+		EEPROM_DEV="$(_slot_get_eeprom ${s})"
 		if [[ "${DUMMY_PATH}" == "${EEPROM_DEV}" || ! -f ${EEPROM_DEV} ]]; then
 			# Empty slot
 			printf "\n"
@@ -114,7 +115,7 @@ function slot_dump() {
 		fi
 		# Populated slot, dump EEPROM
 		printf "\n"
-		echo "Virtual Slot ${STACK_SLOTS[${i}]}: EEPROM raw data:"
+		echo "Virtual Slot ${STACK_SLOTS[${s}]}: EEPROM raw data:"
 		printf "\n"
 		hexdump -C ${EEPROM_DEV}
 		printf "\n"
@@ -126,7 +127,7 @@ function slot_dump() {
 		echo " IFM ID:              0x$(eeprom_print_ifm_id 1 ${EEPROM_DEV})"
 		EEPROM_SERIAL=""; eeprom_get_serial_number ${DEFAULT_PAGE_NUM} ${EEPROM_DEV}
 		echo " Serial Number:       ${EEPROM_SERIAL}"
-		if [[ "${STACK_IFM[${i}]}" == "WB" ]] ; then
+		if [[ "${STACK_IFM[${s}]}" == "WB" ]] ; then
 			eeprom_get_mac_address "first" ${EEPROM_DEV} ${DEFAULT_PAGE_NUM}
 			echo " 1st MAC:             ${ETH_MAC}"
 			eeprom_get_mac_address "second" ${EEPROM_DEV} ${DEFAULT_PAGE_NUM}
