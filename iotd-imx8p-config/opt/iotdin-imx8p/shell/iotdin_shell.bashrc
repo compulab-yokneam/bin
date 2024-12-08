@@ -12,6 +12,12 @@ do_iotdin() {
 	${STACK_LIB} $@
 }
 
+GW_LIB=${IOTDIN_SHELL_HOME}/gw.sh
+
+do_gateway() {
+	${GW_LIB} $@
+}
+
 do_extra() {
 	bash --rcfile ${IOTDIN_SHELL_HOME}/iotdin_expert_shell.bashrc
 }
@@ -22,6 +28,7 @@ cat << eof
 [Vv] - Explore Slot: probe and display (specific slot)
 [Mm] - Manage Stack: validate configuration and grant access (all slots)
 [Ii] - Show Stack Info
+[Gg] - Show Gateway Info
 [Xx] - Extra functionality (experts only)
 [Qq] - Quit IOTDIN shell
 eof
@@ -38,6 +45,8 @@ alias m='do_iotdin stack manage'
 alias M='do_iotdin stack manage'
 alias i='do_iotdin stack info'
 alias I='do_iotdin stack info'
+alias g='do_gateway info'
+alias G='do_gateway info'
 alias x='do_extra'
 alias X='do_extra'
 alias q='exit'
