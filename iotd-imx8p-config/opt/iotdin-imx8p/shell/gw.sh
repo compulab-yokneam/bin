@@ -65,6 +65,10 @@ function gw_grant_access() {
 	echo ${PIN_I} >> ${GW_ACCESS_IO_HOME}/${GW_ACCESS_DI}
 	echo ${CHIP_O} > ${GW_ACCESS_IO_HOME}/${GW_ACCESS_DO}
 	echo ${PIN_O} >> ${GW_ACCESS_IO_HOME}/${GW_ACCESS_DO}
+
+	# CMD Button
+	mkdir -p ${GW_ACCESS_CMD_BTN_HOME}
+	[[ -L ${GW_CMD_BTN_DEV} ]] && ln -s $(readlink -f ${GW_CMD_BTN_DEV}) ${GW_ACCESS_CMD_BTN_HOME}/${GW_ACCESS_CMD_BTN}
 }
 
 ### Main

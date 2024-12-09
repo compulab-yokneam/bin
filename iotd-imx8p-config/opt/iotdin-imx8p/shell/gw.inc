@@ -49,3 +49,7 @@ export PIN_O="30 4"
 export CHIP_I="4 4"
 export PIN_I="3 0"
 
+## CMD button
+export GW_ACCESS_CMD_BTN_HOME=${GW_ACCESS}/cmd_button
+export GW_ACCESS_CMD_BTN=event
+export GW_CMD_BTN_DEV=/dev/input/by-path/platform-gpio-keys-event
