@@ -307,7 +307,7 @@ function eeprom_print_hex_value() {
 
 	[[ ${LEN} -gt 16 ]] && LEN=16
 	# Dump value to an ASCII string
-	local VAL=$(dd status=none if=${FILE} bs=1 skip=$((PAGE_OFFSET+OFFSET)) count=${LEN}  | od -An -tx1 | tr -d ' \n')
+	local VAL=$(dd if=${FILE} bs=1 skip=$((PAGE_OFFSET+OFFSET)) count=${LEN} 2>/dev/null | od -An -tx1 | tr -d ' \n')
 	echo ${VAL};
 }
 
