@@ -107,6 +107,22 @@ function ifm_accounting_inc() {
 	return 0
 }
 
+function ifm_dio_irq_set() {
+	local bus=${1}
+	local addr=${2}
+	local state=${3:-${IRQ_EN}}
+	local regval=ff
+
+	[[ -d ${I2C_BUS}/${bus}-00${addr}  ]] || return 0 # I2C device not found
+	if [[ ${state} -eq ${IRQ_DIS} ]] ; then
+		regval=0
+	fi
+	command -v i2cset &>/dev/null || return 0 # i2cset utility not found
+	for reg in ${IER} ${REIR} ${FEIR} ; do
+		 i2cset -f -y 0x${bus} 0x${addr} 0x${reg} 0x${regval} &>/dev/null && true || true
+	done
+}
+
 function ifm_grant_access() {
 	local slot=${1}
 	# Validate slot index
@@ -148,6 +164,7 @@ function ifm_grant_access() {
 						printf "%s " $(seq ${PIN_IB} ${PIN_IE} | xargs -x) | xargs >> ${access_home}/${ACCESS_DI}
 						printf "${chipnum}%.0s " $(seq ${PIN_OB} ${PIN_OE}) | xargs > ${access_home}/${ACCESS_DO}
 						printf "%s " $(seq ${PIN_OB} ${PIN_OE} | xargs -x) | xargs >> ${access_home}/${ACCESS_DO}
+						ifm_dio_irq_set ${bus} ${addr}
 						break
 					fi
 				done
