@@ -9,12 +9,14 @@ SCR_NAME=$(basename $0)
 
 function usage() {
 	local ret=${1:-0}
-	echo "Usage: ${SCR_NAME} [options]"
-	echo ""
-	echo "List all Digital I/O (DIO) modules"
-	echo ""
-	echo "Options:"
-	echo " -h:	display this help and exit"
+cat << EOF
+Usage: ${SCR_NAME} [options]
+
+List all Digital I/O (DIO) modules
+
+Options:
+ -h:    display this help and exit
+EOF
 	exit ${ret}
 }
 
@@ -86,6 +88,4 @@ function main() {
 	list_dio_stack
 }
 
-#set -x
 main $@
-#set +x

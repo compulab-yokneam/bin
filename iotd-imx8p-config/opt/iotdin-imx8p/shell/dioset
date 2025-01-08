@@ -9,21 +9,23 @@ SCR_NAME=$(basename $0)
 
 function usage() {
 	local ret=${1:-0}
-	echo "Usage: ${SCR_NAME} [options] <command>"
-	echo ""
-	echo "Set digital output state of a Digital I/O (DIO) module"
-	echo ""
-	echo "Command:"
-	echo " -m <module> <offset>  <state>"
-	echo " 	module: DIO module location:"
-	echo " 	    m|M - Main Gateway"
-	echo " 	    a|A - Virtulal slot A"
-	echo " 	    ..."
-	echo " 	    h|H - Virtulal slot H"
-	echo " 	offset:	output pin offset: <0..MaxOffset>"
-	echo " 	state:	output pin state to be set: <0|1>"
-	echo "Options:"
-	echo " -h:	display this help and exit"
+cat << EOF
+Usage: ${SCR_NAME} [options] <command>
+
+Set digital output state of a Digital I/O (DIO) module
+
+Command:
+ -m <module> <offset>  <state>
+     module: DIO module location:
+         m|M - Main Gateway
+         a|A - Virtulal slot A
+         ...
+         h|H - Virtulal slot H
+     offset: output pin offset: <0..MaxOffset>
+     state:  output pin state to be set: <0|1>
+Options:
+ -h:    display this help and exit
+EOF
 	exit ${ret}
 }
 
@@ -35,7 +37,7 @@ function main() {
 	local offset=
 	local state=
 
-	while getopts ':h:m:' OPTION; do
+	while getopts ':hm:' OPTION; do
 		case "${OPTION}" in
 		"m")
 			slot="${OPTARG}"
@@ -66,10 +68,8 @@ function main() {
 	# Check parameters
 	check_params_out ${slot} ${offset}
 	# Read state
-	gpioset ${c_opt} ${D_CHIP[${offset}]} ${D_PIN[${offset}]}=${state}
+	gpioset ${LIBGPIOD_OPT} ${D_CHIP[${offset}]} ${D_PIN[${offset}]}=${state}
 	return $?
 }
 
-#set -x
 main $@
-#set +x

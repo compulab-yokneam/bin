@@ -1,3 +1,5 @@
+LIBGPIOD_OPT=
+
 function msg() {
 	echo "${SCR_NAME}: $@"
 }
@@ -44,6 +46,26 @@ function check_params() {
 	d_num=${#D_CHIP[@]}
 	[[ ${d_num} -gt 0 ]] || err_msg "Issue detected with DIO module in the ${location}"
 	[[ ${offset} -ge 0 && ${offset} -lt ${d_num} ]] || err_msg "Invalid pin offset '${offset}'"
+
+	# Check libgpiod version and set additional options if required
+	local gpioutil=gpioset
+	if [[ "${inout}" == "in" ]] ; then
+		gpioutil=gpioget
+	fi
+	libgpiod_version=$(${gpioutil} -v 2>/dev/null | awk '/ \(libgpiod\) v/ {print $NF}')
+	if [[ ${libgpiod_version} =~ v(2\.[0-9]+\.[0-9]+) ]] ; then
+		if [[ "${inout}" == "in" ]] ; then
+			# Add options for gpioget
+			local GPIOGET_OPT="--numeric" # old style output (value only)
+			LIBGPIOD_OPT=${GPIOGET_OPT}
+		else
+			# Add options for gpioset
+			local GPIOSET_OPT="--toggle 0" # return immediately
+			LIBGPIOD_OPT=${GPIOSET_OPT}
+		fi
+		# Add common options
+		LIBGPIOD_OPT=${LIBGPIOD_OPT}" --chip"
+	fi
 }
 
 function check_params_out() {
