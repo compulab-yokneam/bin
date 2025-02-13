@@ -42,8 +42,7 @@ function slot_show() {
 	local fslot=${1:-${BIDX}}								# 1-st slot
 	local tslot=${2:-${EIDX}}								# Last slot
 	local cslot=$((${tslot} - ${fslot} + 1))				# Number of slots
-	local slot_list=$(seq ${fslot} ${tslot} | xargs -x)		# Slot list
-	
+
 	# Output stack state as a table
 	printf "\n"
 	# Header - delimiter
@@ -66,7 +65,7 @@ function stack_show() {
 function stack_show_nonepmty() {
 	local fslot=${BIDX}	# From slot
 	local tslot=${EIDX}	# To slot
-	local slot_list=$(seq ${fslot} ${tslot} | xargs -x)
+	local slot_list=$(seq ${fslot} ${tslot})
 	local ifm_type=${IFM_TYPE_ND}
 	local last=${EIDX}
 	local ret
@@ -98,7 +97,7 @@ function _slot_get_eeprom() {
 function slot_dump() {
 	local fslot=${1:-${BIDX}}	# From slot
 	local tslot=${2:-${EIDX}}	# To slot
-	local slot_list=$(seq ${fslot} ${tslot} | xargs -x)
+	local slot_list=$(seq ${fslot} ${tslot})
 	local EEPROM_DEV=
 	local s=
 

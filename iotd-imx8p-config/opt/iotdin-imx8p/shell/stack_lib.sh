@@ -183,9 +183,9 @@ function ifm_grant_access_DIxOx() {
 				ln -s ${GPIO_DEV_HOME}/${chip} ${access_home}/${ACCESS_GPIO}
 				local chipnum=${chip#"gpiochip"}
 				printf "${chipnum}%.0s " $(seq ${p_ib} ${p_ie}) | xargs > ${access_home}/${ACCESS_DI}
-				printf "%s " $(seq ${p_ib} ${p_ie} | xargs -x) | xargs >> ${access_home}/${ACCESS_DI}
+				printf "%s " $(seq ${p_ib} ${p_ie}) | xargs >> ${access_home}/${ACCESS_DI}
 				printf "${chipnum}%.0s " $(seq ${p_ob} ${p_oe}) | xargs > ${access_home}/${ACCESS_DO}
-				printf "%s " $(seq ${p_ob} ${p_oe} | xargs -x) | xargs >> ${access_home}/${ACCESS_DO}
+				printf "%s " $(seq ${p_ob} ${p_oe}) | xargs >> ${access_home}/${ACCESS_DO}
 				ifm_dio_irq_set ${bus} ${addr}
 			fi
 		done
@@ -319,7 +319,7 @@ function ifm_add() {
 	is_ifm_accessable ${slot} && ret=$? || ret=$?
 	if [[ ${ret} -ne ${RET_OK} ]]; then
 		# remove all slots starting from this one
-		for s in $(seq ${slot} ${EIDX} | xargs -x) ; do
+		for s in $(seq ${slot} ${EIDX}) ; do
 			ifm_cleanup ${s}
 		done
 		return 1
@@ -412,7 +412,7 @@ function slot_add() {
 function slot_probe() {
 	local fslot=${1:-${BIDX}}	# From slot
 	local tslot=${2:-${EIDX}}	# To slot
-	local slot_list=$(seq ${fslot} ${tslot} | xargs -x)
+	local slot_list=$(seq ${fslot} ${tslot})
 	local verbose=${3:-1}
 	local EEPROM_DEV=""
 	local IFM_ID=""			# IFM ID ASCII string
@@ -479,7 +479,7 @@ function slot_probe() {
 function stack_walkthru_backplane() {
 	local fslot=${BIDX}	# From slot
 	local tslot=${EIDX}	# To slot
-	local slot_list=$(seq ${fslot} ${tslot} | xargs -x)
+	local slot_list=$(seq ${fslot} ${tslot})
 	local ifm_type=${IFM_TYPE_ND}
 
 	for i in ${slot_list}; do
@@ -502,7 +502,7 @@ function stack_walkthru_backplane() {
 function stack_manage_access() {
 	local fslot=${BIDX}	# From slot
 	local tslot=${EIDX}	# To slot
-	local slot_list=$(seq ${fslot} ${tslot} | xargs -x)
+	local slot_list=$(seq ${fslot} ${tslot})
 	local ifm_type=${IFM_TYPE_ND}
 	local ret=0
 
@@ -526,7 +526,7 @@ function stack_manage_config() {
 	local local verbose=${1:-1}
 	local fslot=${BIDX}	# From slot
 	local tslot=${EIDX}	# To slot
-	local slot_list=$(seq ${fslot} ${tslot} | xargs -x)
+	local slot_list=$(seq ${fslot} ${tslot})
 	local ifm_type=${IFM_TYPE_ND}
 	local last_valid=${EIDX}
 	local ret=
@@ -548,13 +548,13 @@ function stack_manage_config() {
 				# So far stack configuration is valid (stack_manageable)
 				# And the current slot is empty: valid configuration
 				last_valid=$((i-1))
-				for s in $(seq ${i} ${EIDX} | xargs -x) ; do
+				for s in $(seq ${i} ${EIDX}) ; do
 					ifm_cleanup ${s}
 				done
 				break
 			else
 				# Either invalid or non-manageable IFM is found in the current slot
-				for s in $(seq ${BIDX} ${EIDX} | xargs -x) ; do
+				for s in $(seq ${BIDX} ${EIDX}) ; do
 					ifm_cleanup ${s}
 				done
 				if [[ ${verbose} -eq 1 ]]; then
