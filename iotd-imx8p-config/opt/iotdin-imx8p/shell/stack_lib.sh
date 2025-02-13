@@ -207,7 +207,7 @@ function ifm_grant_access() {
 				sleep 1
 				if [[ -d ${NETX100_DEV_HOME} ]]; then
 					local uio=$(ls ${NETX100_DEV_HOME})
-					[[ -L ${UIO_HOME}/${uio} ]] && ln -s ${uio} ${access_home}/${ACCESS_UIO}
+					[[ -L ${UIO_HOME}/${uio} ]] && ln -s ${UIO_HOME}/${uio} ${access_home}/${ACCESS_UIO}
 				fi
 				;;
 			"MESH")
