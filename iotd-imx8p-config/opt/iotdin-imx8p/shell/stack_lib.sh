@@ -5,10 +5,70 @@
 . ${IOTDIN_LIB_HOME}/stack_lib.inc
 . ${IOTDIN_LIB_HOME}/resources.inc
 
+export LIMITED_RES=
+function ifm_check_limit() {
+	# Slot index
+	local ifm_res_type=${1}
+
+	LIMITED_RES=
+	[[ "${!IFM_RES_LIMIT[@]}" =~ "${ifm_res_type}" ]] || return ${ERR_INVAL}
+
+	declare -n ifm_arr=IFM_ARR_${ifm_res_type}
+	local ifm_limit=${IFM_RES_LIMIT[${ifm_res_type}]}
+	local ifm_num=${#ifm_arr[@]}
+
+	if [[ ${ifm_num} -lt ${ifm_limit}  ]]; then
+		return ${RET_OK}
+	fi
+
+	#return ${err_limit}
+	LIMITED_RES=${ifm_res_type}
+	return ${ERR_LIMIT_RES}
+}
+
+function is_ifm_accessable_PCIE() {
+	# Slot index
+	local slot=${1}
+
+	# PCIe based IFM-<WB|NVME|...> is accessable only when installed into the 1-st slot
+	if [[ ${slot} -ne ${BIDX} ]] ; then
+		return ${ERR_PCIE_SLOT}
+	fi
+
+	# Check PCIE resources although not a necessary
+	ifm_check_limit PCIE
+	return $?
+}
+
+function is_ifm_accessable_USB() {
+	ifm_check_limit USB
+	return $?
+}
+
+function is_ifm_accessable_I2C5_META() {
+	ifm_check_limit I2C5_META
+	return $?
+}
+
+function is_ifm_accessable_I2C6() {
+	ifm_check_limit I2C6
+	return $?
+}
+
+function is_ifm_accessable_GPIO_GR2() {
+	ifm_check_limit GPIO_GR2
+	return $?
+}
+
+function is_ifm_accessable_SPI() {
+	ifm_check_limit SPI
+	return $?
+}
+
 function is_ifm_accessable() {
 	# Slot index
 	local slot=${1}
-	local ret=
+	local ret=${RET_OK}
 	# Validate slot index
 	if [[ ${slot} -gt ${EIDX} || ${slot} -lt ${BIDX} ]]; then
 		return ${ERR_SLOT_NUM}
@@ -18,28 +78,12 @@ function is_ifm_accessable() {
 	# Known IFM type
 	if [[ "${IFM_TYPE[@]}" =~ "${ifm_type}" ]]; then
 		# recalculate resources and decide
-		## Is it PCIe device?
-		if [[ "${IFM_RES_PCIE[@]}" =~ "${ifm_type}" ]] ; then
-			# PCIe based IFM-<WB|NVME|...> is accessable only when installed into the 1-st slot
-			if [[ ${slot} -ne ${BIDX} ]] ; then
-				return ${ERR_PCIE_SLOT}
-			fi
-			[[ "${IFM_RES_USB[@]}" =~ "${ifm_type}" ]] || return ${RET_OK}
-		fi
-
-		## Is it USB device?
-		if [[ "${IFM_RES_USB[@]}" =~ "${ifm_type}" ]] ; then
-			ifm_type="USB"
-		fi
-		## USB or other type
-		declare -n ifm_arr=IFM_ARR_${ifm_type}
-		declare -n ifm_limit=IFM_LIMIT_${ifm_type}
-		local ifm_num=${#ifm_arr[@]}
-		
-		if [[ ${ifm_num} -lt ${ifm_limit}  ]]; then
-			return ${RET_OK}
-		fi
-		[[ "${ifm_type}" -eq "USB" ]] && ret=${ERR_LIMIT_USB} || ret=${ERR_LIMIT}
+		declare -n res_arr=IFM_RES_${ifm_type}
+		for r in ${res_arr[@]} ; do
+			is_ifm_accessable_${r} ${slot}
+			ret=$?
+			[[ ${ret} -eq ${RET_OK} ]] || return ${ret}
+		done
 		return ${ret}
 	fi
 
@@ -50,61 +94,42 @@ function ifm_cleanup() {
 	# Slot index
 	local slot=${1}
 	# Validate slot index
-	[[ ${slot} -lt ${EIDX} || ${slot} -gt ${BIDX} ]] || return 1;
+	[[ ${slot} -lt ${EIDX} || ${slot} -gt ${BIDX} ]] || return ${ERR_SLOT_NUM}
 
 	local ifm_home=${FPE_HOME}/${STACK_SLOTS[${slot}]}
 	rm -rf ${ifm_home}
 }
 
 function ifm_accounting_reset() {
-	for t in ${IFM_TYPE[@]} ; do
-		[[ "${IFM_RES_PCIE[@]}" =~ "${t}" ]] && continue
-		[[ "${IFM_RES_USB[@]}" =~ "${t}" ]] && continue
-
-		declare -n ifm_arr=IFM_ARR_${t}
-		#echo "${t}: ifm_arr='${ifm_arr[@]}'"
+	for r in ${!IFM_RES_LIMIT[@]} ; do
+		declare -n ifm_arr=IFM_ARR_${r}
+		#echo "${r}: ifm_arr='${ifm_arr[@]}'"
 		unset ifm_arr
 	done
-	unset IFM_ARR_PCIE
-	unset IFM_ARR_USB
 }
 
 function ifm_accounting_inc() {
 	local slot=${1}
 	# Validate slot index
-	[[ ${slot} -lt ${EIDX} || ${slot} -gt ${BIDX} ]] || return 1;
+	[[ ${slot} -lt ${EIDX} || ${slot} -gt ${BIDX} ]] || return ${ERR_SLOT_NUM}
 
 	local ifm_type=${STACK_IFM[${slot}]}
 	# Known IFM type
 	if [[ "${IFM_TYPE[@]}" =~ "${ifm_type}" ]]; then
 		# recalculate resources and decide
-		if [[ "${IFM_RES_PCIE[@]}" =~ "${ifm_type}" ]] ; then
-			idx=${#IFM_ARR_PCIE[@]}
-			if [[ ${idx} -ge ${IFM_LIMIT_PCIE} ]] ; then
-				return 1
+		declare -n res_arr=IFM_RES_${ifm_type}
+		for r in ${res_arr[@]} ; do
+			declare -n ifm_arr=IFM_ARR_${r}
+			local ifm_limit=${IFM_RES_LIMIT[${r}]}
+			local idx=${#ifm_arr[@]}
+			if [[ ${idx} -ge ${ifm_limit}  ]]; then
+				declare -n err_limit=ERR_LIMIT_${r}
+				return ${err_limit}
 			fi
-			IFM_ARR_PCIE[${idx}]=${slot}
-			[[ "${IFM_RES_USB[@]}" =~ "${ifm_type}" ]] || return 0
-		fi
-		if [[ "${IFM_RES_USB[@]}" =~ "${ifm_type}" ]] ; then
-			idx=${#IFM_ARR_USB[@]}
-			if [[ ${idx} -ge ${IFM_LIMIT_USB} ]] ; then
-				return 1
-			fi
-			IFM_ARR_USB[${idx}]=${slot}
-			return 0
-		fi
-
-		declare -n ifm_arr=IFM_ARR_${ifm_type}
-		declare -n ifm_limit=IFM_LIMIT_${ifm_type}
-		local idx=${#ifm_arr[@]}
-		if [[ ${idx} -ge ${ifm_limit}  ]]; then
-			return 1
-		fi
-		ifm_arr[${idx}]=${slot}
+			ifm_arr[${idx}]=${slot}
+		done
 	fi
-
-	return 0
+	return ${RET_OK}
 }
 
 function ifm_dio_irq_set() {
@@ -113,33 +138,71 @@ function ifm_dio_irq_set() {
 	local state=${3:-${IRQ_EN}}
 	local regval=ff
 
-	[[ -d ${I2C_BUS}/${bus}-00${addr}  ]] || return 0 # I2C device not found
+	[[ -d ${I2C_BUS}/${bus}-00${addr}  ]] || return ${RET_OK} # I2C device not found
 	if [[ ${state} -eq ${IRQ_DIS} ]] ; then
 		regval=0
 	fi
-	command -v i2cset &>/dev/null || return 0 # i2cset utility not found
+	command -v i2cset &>/dev/null || return ${RET_OK} # i2cset utility not found
 	for reg in ${IER} ${REIR} ${FEIR} ; do
 		 i2cset -f -y 0x${bus} 0x${addr} 0x${reg} 0x${regval} &>/dev/null && true || true
 	done
 }
 
+function ifm_grant_access_DIxOx() {
+	local slot=${1}
+	# Validate slot index
+	[[ ${slot} -lt ${EIDX} || ${slot} -gt ${BIDX} ]] || return ${ERR_SLOT_NUM};
+
+	local ifm_type=${STACK_IFM[${slot}]}
+	if [[ "${IFM_RES_I2C5_META[@]}" =~ "${ifm_type}" ]]; then
+		# Because of USB bus shifting
+		for (( i=0 ; i<${#IFM_ARR_I2C5_META[@]} ; i++ )) ; do
+			if [[ "${IFM_ARR_I2C5_META[${i}]}" -eq "${slot}" ]] ; then
+				local access_home=${FPE_HOME}/${STACK_SLOTS[${slot}]}/${FPE_ACCESS}
+				# Determine a number on IN and OUT pins
+				local p_ib=${PIN_IB}
+				local p_ie=0
+				local p_ob=${PIN_OB}
+				local p_oe=0
+				case ${ifm_type} in
+					"DI8O8")
+						p_ie=$((p_ib + ${DI8O8_INUM} - 1))
+						p_oe=$((p_ob + ${DI8O8_ONUM} - 1))
+						;;
+					*)
+						;;
+				esac
+				local addr=$((DIxOx_GPIOCHIP_BASEADDR + i))
+				local bus=${DIxOx_GPIOCHIP_BUS}
+				local chip=$(basename ${I2C_BUS}/${bus}-00${addr}/gpiochip*)
+				[[ -c ${GPIO_DEV_HOME}/${chip} ]] || return ${RET_OK} ;
+				ln -s ${GPIO_DEV_HOME}/${chip} ${access_home}/${ACCESS_GPIO}
+				local chipnum=${chip#"gpiochip"}
+				printf "${chipnum}%.0s " $(seq ${p_ib} ${p_ie}) | xargs > ${access_home}/${ACCESS_DI}
+				printf "%s " $(seq ${p_ib} ${p_ie} | xargs -x) | xargs >> ${access_home}/${ACCESS_DI}
+				printf "${chipnum}%.0s " $(seq ${p_ob} ${p_oe}) | xargs > ${access_home}/${ACCESS_DO}
+				printf "%s " $(seq ${p_ob} ${p_oe} | xargs -x) | xargs >> ${access_home}/${ACCESS_DO}
+				ifm_dio_irq_set ${bus} ${addr}
+			fi
+		done
+	fi
+	return ${RET_OK}
+}
+
 function ifm_grant_access() {
 	local slot=${1}
 	# Validate slot index
-	[[ ${slot} -lt ${EIDX} || ${slot} -gt ${BIDX} ]] || return 1;
+	[[ ${slot} -lt ${EIDX} || ${slot} -gt ${BIDX} ]] || return ${ERR_SLOT_NUM}
 
 	local ifm_type=${STACK_IFM[${slot}]}
 
 	# Known IFM type
 	if [[ "${IFM_TYPE[@]}" =~ "${ifm_type}" ]]; then
-		# recalculate resources and decide
-		declare -n ifm_arr=IFM_ARR_${ifm_type}
-		local ifm_num=${#ifm_arr[@]}
+		# Create access files for populated slots
 		local access_home=${FPE_HOME}/${STACK_SLOTS[${slot}]}/${FPE_ACCESS}
-
 		case ${ifm_type} in
 			"RS232"|"RS485")
-				# Because of USB bus shifting
+				# Create access files for 4x TTY devices
 				for (( i=0 ; i<${#IFM_ARR_USB[@]} ; i++ )) ; do
 					if [[ "${IFM_ARR_USB[${i}]}" -eq "${slot}" ]] ; then
 						for p in {0..3}; do
@@ -153,23 +216,11 @@ function ifm_grant_access() {
 				done
 				;;
 			"DI8O8")
-				local addr=$((ifm_num - 1 + DI8O8_GPIOCHIP_BASEADDR))
-				local bus=${DI8O8_GPIOCHIP_BUS}
-				for f in ${I2C_BUS}/${bus}-00${addr}/* ; do
-					if [[ "$(basename ${f})" == "gpiochip"* && -c ${GPIO_DEV_HOME}/$(basename ${f}) ]]; then
-						local chip=$(basename ${f})
-						ln -s ${GPIO_DEV_HOME}/${chip} ${access_home}/${ACCESS_GPIO}
-						local chipnum=${chip#"gpiochip"}
-						printf "${chipnum}%.0s " $(seq ${PIN_IB} ${PIN_IE}) | xargs > ${access_home}/${ACCESS_DI}
-						printf "%s " $(seq ${PIN_IB} ${PIN_IE} | xargs -x) | xargs >> ${access_home}/${ACCESS_DI}
-						printf "${chipnum}%.0s " $(seq ${PIN_OB} ${PIN_OE}) | xargs > ${access_home}/${ACCESS_DO}
-						printf "%s " $(seq ${PIN_OB} ${PIN_OE} | xargs -x) | xargs >> ${access_home}/${ACCESS_DO}
-						ifm_dio_irq_set ${bus} ${addr}
-						break
-					fi
-				done
-				;;		
+				# Create access files for DI8O8
+				ifm_grant_access_DIxOx ${slot}
+				;;
 			"ADC8")
+				# Create access files for 2x IIO devices
 				modprobe ti_ads1015 > /dev/null 2>&1
 				sleep 1
 				# Create two symbolic links to iio devices
@@ -180,6 +231,7 @@ function ifm_grant_access() {
 				done
 				;;
 			"WB")
+				# Create access files for WLAN and BT devices
 				modprobe iwlwifi > /dev/null 2>&1
 				modprobe btusb > /dev/null 2>&1
 				sleep 1
@@ -197,12 +249,14 @@ function ifm_grant_access() {
 				fi
 				;;
 			"NVME")
+				# Create access files for block device (storage)
 				local nvme=${NVME_DEV_HOME}/${NVME_DEV}
 				if [[ -b ${nvme} ]]; then
 					ln -s ${nvme} ${access_home}/${ACCESS_NVME}
 				fi
 				;;
 			"NETX100")
+				# Create access files for UIO device
 				modprobe uio_netx > /dev/null 2>&1
 				sleep 1
 				if [[ -d ${NETX100_DEV_HOME} ]]; then
@@ -211,6 +265,7 @@ function ifm_grant_access() {
 				fi
 				;;
 			"MESH")
+				# Create access files for BT devices
 				modprobe btusb > /dev/null 2>&1
 				sleep 1
 				for (( i=0 ; i<${#IFM_ARR_USB[@]} ; i++ )) ; do
@@ -241,7 +296,7 @@ function ifm_add() {
 	local slot=${1}
 	local ret
 	# Validate slot index
-	[[ ${slot} -lt ${EIDX} || ${slot} -gt ${BIDX} ]] || return 1;
+	[[ ${slot} -lt ${EIDX} || ${slot} -gt ${BIDX} ]] || return ${ERR_SLOT_NUM};
 	is_ifm_accessable ${slot} && ret=$? || ret=$?
 	if [[ ${ret} -ne ${RET_OK} ]]; then
 		# remove all slots starting from this one
@@ -252,7 +307,7 @@ function ifm_add() {
 	fi
 	local ifm_type=${STACK_IFM[${slot}]}
 
-	ifm_accounting_inc ${slot} #|| return 1
+	ifm_accounting_inc ${slot}
 	
 	# Create IFM home directory
 	local ifm_home=${FPE_HOME}/${STACK_SLOTS[${slot}]}
@@ -269,7 +324,7 @@ function ifm_add() {
 	# create access subdir
 	mkdir -p ${ifm_home}/${FPE_ACCESS}
 	# populate with access info according to IFM type
-	ifm_grant_access ${slot} #|| return 1
+	ifm_grant_access ${slot}
 }
 
 function is_slot_empty() {
@@ -296,7 +351,7 @@ function slot_cleanup() {
 	# Slot index
 	local slot=${1}
 	# Validate slot index
-	[[ ${slot} -lt ${EIDX} || ${slot} -gt ${BIDX} ]] || return 1;
+	[[ ${slot} -lt ${EIDX} || ${slot} -gt ${BIDX} ]] || return ${ERR_SLOT_NUM};
 
 	local slot_home=${BPE_HOME}/${STACK_SLOTS[${slot}]}
 	rm -rf ${slot_home}
@@ -307,7 +362,7 @@ function slot_add() {
 	# Slot index
 	local slot=${1}
 	# Validate slot index
-	[[ ${slot} -lt ${EIDX} || ${slot} -gt ${BIDX} ]] || return 1;
+	[[ ${slot} -lt ${EIDX} || ${slot} -gt ${BIDX} ]] || return ${ERR_SLOT_NUM};
 
 	# IFM type
 	local ifm_type=${2:-${STACK_IFM[${slot}]}}
@@ -493,19 +548,19 @@ function stack_manage_config() {
 						"${ERR_PCIE_SLOT}")
 							echo "IFM-${STACK_IFM[${i}]}: can only be installed in virtual slot ${STACK_SLOTS[${BIDX}]}"
 							;;
-						"${ERR_LIMIT}")
-							if [[ "${IFM_RES_USB[@]}" =~ "${ifm_type}" ]] ; then
-								echo "IFM-${ifm_type}: there can be up-to ${ifm_limit} module(s)"
-
-							fi
-							;;
-						"${ERR_LIMIT_USB}")
-							printf -v list "%s|" ${IFM_RES_USB[@]}
-							echo "IFM-${ifm_type}: there can be up-to ${IFM_LIMIT_USB} (in total) modules of types IFM-<${list%?}>"
-							;;
 						"${ERR_INVAL}")
 							echo "Populate the IFM Stack with well-defined IFMs only!"
 							echo "Refer to the Stacking Rules for more info."
+							;;
+						"${ERR_LIMIT_RES}")
+							res_type=${LIMITED_RES}
+							if [[ "${!IFM_RES_LIMIT[@]}" =~ "${ifm_res_type}" ]] ; then
+								declare -n res_arr=IFM_RES_${res_type}
+								printf -v list "%s|" ${res_arr[@]}
+								echo "IFM-${ifm_type}: there can be up-to ${IFM_RES_LIMIT[${res_type}]} (in total) module(s) of type(s) IFM-<${list%?}>"
+							else
+								echo "Unexpected error: refer to the Stacking Rules, and double check the Stack. Try again later..."
+							fi
 							;;
 						*)
 							echo "Unexpected error: refer to the Stacking Rules, and double check the Stack. Try again later..."
