@@ -169,6 +169,10 @@ function ifm_grant_access_DIxOx() {
 						p_ie=$((p_ib + ${DI8O8_INUM} - 1))
 						p_oe=$((p_ob + ${DI8O8_ONUM} - 1))
 						;;
+					"CAN")
+						p_ie=$((p_ib + ${CAN_DI4O4_INUM} - 1))
+						p_oe=$((p_ob + ${CAN_DI4O4_ONUM} - 1))
+						;;
 					*)
 						;;
 				esac
@@ -217,6 +221,21 @@ function ifm_grant_access() {
 				;;
 			"DI8O8")
 				# Create access files for DI8O8
+				ifm_grant_access_DIxOx ${slot}
+				;;
+			"CAN")
+				# Create access files for 2x CAN interfaces
+				modprobe mcp251xfd > /dev/null 2>&1
+				sleep 1
+				# Create two symbolic links to can interfaces
+				for i in {0..1} ; do
+					local dev_home=${CAN_DEV_PREFIX}${i}${CAN_DEV_SUFFIX}
+					if [[ -d ${dev_home} ]]; then
+						local can=$(ls ${dev_home})
+						[[ -L ${CAN_HOME}/${can} ]] && ln -s ${CAN_HOME}/${can} ${access_home}/${ACCESS_CAN}${i}
+					fi
+				done
+				# Create access files for DI4O4 sybsystem
 				ifm_grant_access_DIxOx ${slot}
 				;;
 			"ADC8")

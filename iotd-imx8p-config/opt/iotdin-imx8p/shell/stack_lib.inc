@@ -71,6 +71,7 @@ export ACCESS_BLKDEV=blkdev
 export ACCESS_NVME=${ACCESS_BLKDEV}
 export ACCESS_NETX100=uio
 export ACCESS_MESH=hci
+export ACCESS_CAN=can
 export PIN_IB=0
 export PIN_IE=7
 export PIN_OB=8
@@ -87,6 +88,8 @@ export DIxOx_GPIOCHIP_BUS=4
 export DIxOx_GPIOCHIP_BASEADDR=20
 export DI8O8_INUM=8
 export DI8O8_ONUM=8
+export CAN_DI4O4_INUM=4
+export CAN_DI4O4_ONUM=4
 export IER=a
 export REIR=10
 export FEIR=12
@@ -110,6 +113,9 @@ export MESH_USB_IDPROD="1000"
 export MESH_DEV_PREFIX=/sys/bus/usb/devices/3-1.
 export MESH_DEV_SUFFIX=:1.0/bluetooth
 export MESH_HOME=/sys/class/bluetooth
+export CAN_DEV_PREFIX=/sys/devices/platform/soc@0/30800000.bus/30830000.spi/spi_master/spi1/spi1.
+export CAN_DEV_SUFFIX=/net/
+export CAN_HOME=/sys/class/net
 
 # Return Values and Error Codes
 export SLOT_EMPTY=0

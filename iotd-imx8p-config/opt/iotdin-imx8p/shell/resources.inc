@@ -20,6 +20,7 @@ declare -a IFM_ARR_USB=()
 # meta-resource I2C5_META
 declare -a IFM_RES_I2C5_META=(
 		"DI8O8"
+		"CAN"
 )
 declare -a IFM_ARR_I2C5_META=()
 ###################################################
@@ -31,10 +32,12 @@ declare -a IFM_ARR_I2C6=()
 
 declare -a IFM_RES_GPIO_GR2=(
 		"ADC8"
+		"CAN"
 )
 declare -a IFM_ARR_GPIO_GR2=()
 
 declare -a IFM_RES_SPI=(
+		"CAN"
 )
 declare -a IFM_ARR_SPI=()
 
@@ -44,10 +47,17 @@ declare -A IFM_RES_LIMIT=(
 		[I2C5_META]=4
 		[I2C6]=1
 		[GPIO_GR2]=1
+		[SPI]=1
 )
 
 declare -a IFM_RES_ADC8=(
 		"I2C6"
+		"GPIO_GR2"
+)
+
+declare -a IFM_RES_CAN=(
+		"SPI"
+		"I2C5_META"
 		"GPIO_GR2"
 )
 

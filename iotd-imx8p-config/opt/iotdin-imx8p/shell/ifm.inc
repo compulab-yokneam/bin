@@ -39,6 +39,7 @@ export RMAP_NVME=$((1 << RMAP_PCIE_OFF))
 export RMAP_NETX100=$((1 << RMAP_PCIE_OFF))
 export RMAP_MESH=$((1 << RMAP_USB1_OFF))
 export RMAP_5G=$((1 << RMAP_PCIE_OFF))
+export RMAP_CAN=$((1 << RMAP_I2C5_OFF | 1 << RMAP_I2C_ADDR_OFF | 1 << RMAP_SPI2_OFF | 1 << RMAP_GPIO_GR2_P1_OFF | 1 << RMAP_GPIO_GR2_P2_OFF))
 
 # IFM ID/type stuff
 ## Known IDs
@@ -51,9 +52,10 @@ export IFM_ID_NVME=16#f
 export IFM_ID_NETX100=16#10
 export IFM_ID_MESH=16#11
 export IFM_ID_5G=16#12
+export IFM_ID_CAN=16#13
 
 export IFM_ID_FIRST=${IFM_ID_RS485}
-export IFM_ID_LAST=${IFM_ID_5G}
+export IFM_ID_LAST=${IFM_ID_CAN}
 
 ## Known types
 declare -a IFM_TYPE=(
@@ -66,6 +68,7 @@ declare -a IFM_TYPE=(
 		"NETX100"
 		"MESH"
 		"5G"
+		"CAN"
 )
 ## Additional pseudo-types
 export IFM_TYPE_INV="Inval"	# Invalid - W1 eeprom found, but does not contain a valid IFM ID
@@ -82,6 +85,7 @@ declare -A IFM_ID2TYPE=(
 		[10]="NETX100"
 		[11]="MESH"
 		[12]="5G"
+		[13]="CAN"
 )
 
 ##  IFM type-to-ID translation array
@@ -95,4 +99,5 @@ declare -A IFM_TYPE2ID=(
 		[NETX100]="10"
 		[MESH]="11"
 		[5G]="12"
+		[CAN]="13"
 )
