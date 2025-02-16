@@ -289,13 +289,13 @@ function ifm_grant_access() {
 				sleep 1
 				for (( i=0 ; i<${#IFM_ARR_USB[@]} ; i++ )) ; do
 					if [[ "${IFM_ARR_USB[${i}]}" -eq "${slot}" ]] ; then
-						local dev_home=${MESH_DEV_PREFIX}$((i+1))${MESH_DEV_SUFFIX}
+						local dev_home=${MESH_BT_DEV_PREFIX}$((i+1))${MESH_BT_DEV_SUFFIX}
 						if [[ -d ${dev_home} ]]; then
 							local idvendor=$(cat ${dev_home}/../../${IDVENDOR})
 							local idprod=$(cat ${dev_home}/../../${IDPROD})
-							if [[ "${idvendor,,}" == "${MESH_USB_IDVENDOR,,}" && "${idprod,,}" == "${MESH_USB_IDPROD,,}" ]] ; then
+							if [[ "${idvendor,,}" == "${MESH_USB_IDVENDOR,,}" && "${idprod,,}" == "${MESH_BT_USB_IDPROD,,}" ]] ; then
 								local mesh=$(ls ${dev_home})
-								[[ -L ${MESH_HOME}/${mesh} ]] && ln -s ${MESH_HOME}/${mesh} ${access_home}/${ACCESS_MESH}
+								[[ -L ${MESH_BT_HOME}/${mesh} ]] && ln -s ${MESH_BT_HOME}/${mesh} ${access_home}/${ACCESS_MESH}
 							fi
 						fi
 						break
