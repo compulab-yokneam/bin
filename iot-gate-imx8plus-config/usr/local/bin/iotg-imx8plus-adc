@@ -1,0 +1,90 @@
+#!/bin/bash
+
+SERV_HOME=$(dirname $(readlink -e ${BASH_SOURCE[0]}))
+. ${SERV_HOME}/iotg-imx8plus-functions
+
+MIN_OFFSET=0
+MAX_OFFSET=3
+IIO_BUS=/sys/bus/iio/devices
+IIO_DEV=iio:device0
+
+function msg() {
+	echo "${SCR_NAME}: $@"
+}
+
+function err_msg() {
+	msg "Error: $@"
+	exit 1
+}
+
+function usage() {
+	local ret=${1:-0}
+cat << EOF
+Usage: ${SCR_NAME} [options]
+
+Read analog input state from an Analog input add-on board
+
+Options:
+ -i <offset>	read analog input pin <0|1|2|3> or
+            	all inputs if option not specified
+
+ -h:			display this help and exit
+EOF
+	exit ${ret}
+}
+
+function main() {
+	local slot="x"
+	local offset=
+	local opt=
+	local ret=0
+	local adc_dev=${IIO_BUS}/${IIO_DEV}
+
+	get_ie_type ${slot} || err_msg "Cannot read M.2 add-on board type in [${slot^^}] slot"
+	if [[ "${IE_DETECTED[${slot}]}" != "ADC" ]]; then
+		err_msg "M.2 ADC add-on board: not detected in [${slot^^}] slot"
+	fi
+	if [[ ! -L ${adc_dev} ]] ; then
+		err_msg "M.2 ADC add-on board: configuration issue: make sure the correct dtb is loaded: iot-gate-imx8plus-m2adc.dtb"
+	fi
+
+	while getopts ':hi:' OPTION; do
+		case "${OPTION}" in
+		"i")
+			opt=${OPTION}
+			offset="${OPTARG}"
+			[[ -n ${offset} ]] || err_msg "Analog input pin offset not specified"
+			[[ ${offset} =~ ^[0-9]+$ ]] || err_msg "Offset must be a number"
+			if [[ ${offset} -lt ${MIN_OFFSET} || ${offset} -gt ${MAX_OFFSET} ]]; then
+				err_msg "Invalid analog input pin offset ${offset}"
+			fi
+			;;
+		"h")
+			usage 0
+			;;
+		?)
+			usage 1
+			;;
+		esac
+	done
+	if [[ -z "${offset}" ]]; then
+		o_b=${MIN_OFFSET}
+		o_e=${MAX_OFFSET}
+	else
+		o_b=${offset}
+		o_e=${offset}
+	fi
+
+	declare -a state
+	for i in $(seq ${o_b} ${o_e}) ; do
+		state[${i}]=$(cat ${adc_dev}/in_voltage${i}_raw) ; (( ret |= $? ))
+	done
+	[[ ${ret} -ne 0 ]] || echo ${state[@]:${o_b}:$((o_e - o_b + 1))}
+
+	return ${ret}
+}
+
+#set -x
+SCR_NAME=$(basename ${BASH_SOURCE[0]})
+main $@
+#set +x
