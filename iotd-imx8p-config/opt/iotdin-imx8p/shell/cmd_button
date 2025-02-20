@@ -1,6 +1,6 @@
 #!/bin/bash
 
-[[ -z ${IOTDIN_LIB_HOME} ]] && export IOTDIN_LIB_HOME=$(dirname ${0})
+[[ -z ${IOTDIN_LIB_HOME} ]] && export IOTDIN_LIB_HOME=$(dirname $(readlink -e ${BASH_SOURCE[0]}))
 
 # Includes
 . ${IOTDIN_LIB_HOME}/common.inc
