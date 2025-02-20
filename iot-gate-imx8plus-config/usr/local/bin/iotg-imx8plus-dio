@@ -22,13 +22,20 @@ function err_msg() {
 
 function usage() {
 	local ret=${1:-0}
-	echo "Usage: ${SCR_NAME} [options] <command>"
-	echo "Command:"
-	echo "	-i <offset>			read state of input pin <0|1|2|3>"
-	echo "	-o <offset> <state>		set output pin <0|1|2|3> state <0|1>"
+cat << EOF
+Usage: ${SCR_NAME} [options] <command>
 
-	echo "Options:"
-	echo "	-h				display this help"
+Command:
+ -i <offset>  Read digital input state from a Digital I/O (DI4O4) module
+     offset:    input pin offset: <0|1|2|3>
+
+ -o <offset> <state>  Set digital output state of a Digital I/O (DI4O4) module
+     offset:    output pin offset: <0|1|2|3>
+     state:     output pin state to be set: <0|1>
+
+Options:
+ -h:    display this help
+EOF
 	exit ${ret}
 }
 
@@ -43,11 +50,12 @@ function main() {
 		err_msg "DI4O4 module not detected in [${slot^^}] slot"
 	fi
 
-	while getopts ':h:i:o:' OPTION; do
+	while getopts ':hi:o:' OPTION; do
 		case "${OPTION}" in
 		"i" | "o")
 			opt=${OPTION}
 			offset="${OPTARG}"
+			[[ ${offset} =~ ^[0-9]+$ ]] || err_msg "Offset must be a number"
 			if [[ ${offset} -lt ${MIN_OFFSET} || ${offset} -gt ${MAX_OFFSET} ]]; then
 				err_msg "Invalid I/O pin offset ${offset}"
 			fi
@@ -60,9 +68,8 @@ function main() {
 			;;
 		esac
 	done
-	if [[ -z "${offset}" ]]; then
-		err_msg "Offset patameter not specified"
-	fi
+
+	[[ -n "${offset}" ]] || err_msg "Offset patameter not specified"
 
 	declare -n pin_arr_name=GPIO_${opt}
 	gpio_num=${pin_arr_name[${offset}]}
