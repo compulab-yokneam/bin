@@ -51,7 +51,7 @@ function list_dio_stack () {
 		[[ -d ${slot_home} ]] || continue
 		ifm_type=$(ls ${slot_home} | grep "${FPE_IFM}\.")
 		ifm_type="${ifm_type##*.}"
-		[[ "${ifm_type}" == "DI8O8" ]] || continue
+		[[ "${ifm_type}" == "DI8O8" || "${ifm_type}" == "CAN" ]] || continue
 		dmap=${slot_home}/${FPE_ACCESS}/${ACCESS_DI}
 		{ read -a D_CHIP ; read -a D_PIN ; } <${dmap}
 		di_num=${#D_PIN[@]}

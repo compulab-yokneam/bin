@@ -115,7 +115,9 @@ export MESH_BT_USB_IDPROD="1000"
 export MESH_BT_DEV_PREFIX=/sys/bus/usb/devices/3-1.
 export MESH_BT_DEV_SUFFIX=:1.0/bluetooth
 export MESH_BT_HOME=/sys/class/bluetooth
-export CAN_DEV_PREFIX=/sys/devices/platform/soc@0/30800000.bus/30830000.spi/spi_master/spi1/spi1.
+SPBA=
+[[ -d /sys/devices/platform/soc@0/30800000.bus/30800000.spba-bus ]] && SPBA="30800000.spba-bus"
+export CAN_DEV_PREFIX=/sys/devices/platform/soc@0/30800000.bus/${SPBA}/30830000.spi/spi_master/spi1/spi1.
 export CAN_DEV_SUFFIX=/net/
 export CAN_HOME=/sys/class/net
 

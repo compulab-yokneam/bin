@@ -33,7 +33,7 @@ function check_params() {
 		[[ -d ${slot_home} ]] || err_msg "No DIO module detected in the ${location}"
 		local ifm_type=$(ls ${slot_home} | grep "${FPE_IFM}\.")
 		ifm_type="${ifm_type##*.}"
-		[[ "${ifm_type}" == "DI8O8" ]] || err_msg "No DIO module detected in the ${location}"
+		[[ "${ifm_type}" == "DI8O8" || "${ifm_type}" == "CAN" ]] || err_msg "No DIO module detected in the ${location}"
 		if [[ "${inout}" == "in" ]] ; then
 			dmap=${slot_home}/${FPE_ACCESS}/${ACCESS_DI}
 		else
