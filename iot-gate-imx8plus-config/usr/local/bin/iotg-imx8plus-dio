@@ -77,7 +77,9 @@ function main() {
 	chip=${chip_arr_name[${offset}]}
 	case "${opt}" in
 	"i")
-		state=$(gpioget ${c_opt} ${chip} ${gpio_num})
+		# Check libgpiod version and set additional options if required
+		set_libgpiod_options "gpioget"
+		state=$(gpioget ${LIBGPIOD_OPT} ${chip} ${gpio_num})
 		ret=$?
 		[[ ${ret} -ne 0 ]] || echo ${state}
 		return ${ret}
@@ -91,7 +93,9 @@ function main() {
 		if [[ ${state} -lt 0 || ${state} -gt 1 ]]; then
 			err_msg "Invalid state ${state}"
 		fi
-		gpioset ${c_opt} ${chip} ${gpio_num}=${state}
+		# Check libgpiod version and set additional options if required
+		set_libgpiod_options "gpioset"
+		gpioset ${LIBGPIOD_OPT} ${chip} ${gpio_num}=${state}
 		return $?
 		;;
 	*)

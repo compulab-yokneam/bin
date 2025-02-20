@@ -1,8 +1,5 @@
 #!/bin/bash
 
-# gpiolib version
-gpioinfo --help | grep -q -- "--chip" && export c_opt="-c " || export c_opt=" "
-
 # Definitions
 
 # POD_DET GPIOs and chip
@@ -72,6 +69,28 @@ declare -a M2_ADDON_LIST=(
 		"TPM"
 )
 
+LIBGPIOD_OPT=
+#############################################################################
+# void set_libgpiod_options() - determines libgpiod version and sets additional
+# option for gpioset/gpioget utilities if required
+# @gpioutil - thetarget utility (gpioset by default)
+# Options are set in the LIBGPIOD_OPT
+#############################################################################
+function set_libgpiod_options() {
+	local gpioutil=${1:-"gpioget"}
+	libgpiod_version=$(${gpioutil} -v 2>/dev/null | awk '/ \(libgpiod\) v/ {print $NF}')
+	if [[ ${libgpiod_version} =~ v(2\.[0-9]+\.[0-9]+) ]] ; then
+		if [[ "${gpioutil}" == "gpioget" ]] ; then
+			GPIOGET_OPT="--numeric" # old style output (value only)
+			LIBGPIOD_OPT=${GPIOGET_OPT}
+		else
+			GPIOSET_OPT="--toggle 0" # return immediately
+			LIBGPIOD_OPT=${GPIOSET_OPT}
+		fi
+		LIBGPIOD_OPT=${LIBGPIOD_OPT}" --chip"
+	fi
+}
+
 #############################################################################
 # int detect_m2_type() - determines EXP board type in M.2 slot
 # @slot - slot name x
@@ -132,8 +151,10 @@ function detect_ie_type() {
 		return 1;
 		;;
 	esac
+	# Check libgpiod version and set additional options if required
+	set_libgpiod_options "gpioget"
 	# Read GPIOs
-	local ie_cfg=$(gpioget ${c_opt} ${POD_DET_GPIO_CHIP} ${pod_det_gpios})
+	local ie_cfg=$(gpioget ${LIBGPIOD_OPT} ${POD_DET_GPIO_CHIP} ${pod_det_gpios})
 
 	# Determine IE type
 	local ie_type="N/A"
