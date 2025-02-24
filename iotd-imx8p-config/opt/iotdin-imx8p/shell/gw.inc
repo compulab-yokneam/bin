@@ -37,7 +37,9 @@ export GW_ACCESS_RS485=ttyRS485
 
 ### CAN
 export GW_ACCESS_CAN=can
-export CAN_DEV_HOME=/sys/devices/platform/soc@0/30800000.bus/308d0000.can/net/
+SPBA=
+[[ -d /sys/devices/platform/soc@0/30800000.bus/30800000.spba-bus ]] && SPBA="30800000.spba-bus"
+export CAN_DEV_HOME=/sys/devices/platform/soc@0/30800000.bus/${SPBA}/308d0000.can/net
 export CAN_HOME=/sys/class/net
 
 ### DI2O2
