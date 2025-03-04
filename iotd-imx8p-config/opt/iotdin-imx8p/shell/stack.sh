@@ -84,16 +84,6 @@ function stack_show_nonepmty() {
 	slot_show ${BIDX} ${last}
 }
 
-function _slot_get_eeprom() {
-	local slot=${1}
-	local EEPROM_DEV="${DUMMY_PATH}"
-
-	if [[ ${slot} -le ${EIDX} && ${slot} -ge ${BIDX} ]]; then
-		EEPROM_DEV=$(readlink -f ${BPE_HOME}/${STACK_SLOTS[${slot}]}/${BPE_W1}/${BPE_W1_EEPROM})
-	fi
-	echo "${EEPROM_DEV}"
-}
-
 function slot_dump() {
 	local fslot=${1:-${BIDX}}	# From slot
 	local tslot=${2:-${EIDX}}	# To slot

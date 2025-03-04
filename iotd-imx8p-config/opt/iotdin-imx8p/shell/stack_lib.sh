@@ -289,7 +289,7 @@ function ifm_grant_access() {
 				sleep 1
 				for (( i=0 ; i<${#IFM_ARR_USB[@]} ; i++ )) ; do
 					if [[ "${IFM_ARR_USB[${i}]}" -eq "${slot}" ]] ; then
-						local dev_home=${MESH_BT_DEV_PREFIX}$((i+1))${MESH_BT_DEV_SUFFIX}
+						local dev_home=${MESH_DEV_PREFIX}$((i+1))${MESH_BT_DEV_SUFFIX}
 						if [[ -d ${dev_home} ]]; then
 							local idvendor=$(cat ${dev_home}/../../${IDVENDOR})
 							local idprod=$(cat ${dev_home}/../../${IDPROD})
@@ -344,6 +344,16 @@ function ifm_add() {
 	mkdir -p ${ifm_home}/${FPE_ACCESS}
 	# populate with access info according to IFM type
 	ifm_grant_access ${slot}
+}
+
+function _slot_get_eeprom() {
+	local slot=${1}
+	local EEPROM_DEV="${DUMMY_PATH}"
+
+	if [[ ${slot} -le ${EIDX} && ${slot} -ge ${BIDX} ]]; then
+		EEPROM_DEV=$(readlink -f ${BPE_HOME}/${STACK_SLOTS[${slot}]}/${BPE_W1}/${BPE_W1_EEPROM})
+	fi
+	echo "${EEPROM_DEV}"
 }
 
 function is_slot_empty() {
