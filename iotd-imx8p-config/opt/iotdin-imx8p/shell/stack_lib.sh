@@ -182,10 +182,16 @@ function ifm_grant_access_DIxOx() {
 				[[ -c ${GPIO_DEV_HOME}/${chip} ]] || return ${RET_OK} ;
 				ln -s ${GPIO_DEV_HOME}/${chip} ${access_home}/${ACCESS_GPIO}
 				local chipnum=${chip#"gpiochip"}
-				printf "${chipnum}%.0s " $(seq ${p_ib} ${p_ie}) | xargs > ${access_home}/${ACCESS_DI}
-				printf "%s " $(seq ${p_ib} ${p_ie}) | xargs >> ${access_home}/${ACCESS_DI}
-				printf "${chipnum}%.0s " $(seq ${p_ob} ${p_oe}) | xargs > ${access_home}/${ACCESS_DO}
-				printf "%s " $(seq ${p_ob} ${p_oe}) | xargs >> ${access_home}/${ACCESS_DO}
+				touch ${access_home}/${ACCESS_DI}
+				if [[ ${p_ib} -le ${p_ie} ]] ; then
+					printf "${chipnum}%.0s " $(seq ${p_ib} ${p_ie}) | xargs > ${access_home}/${ACCESS_DI}
+					printf "%s " $(seq ${p_ib} ${p_ie}) | xargs >> ${access_home}/${ACCESS_DI}
+				fi
+				touch ${access_home}/${ACCESS_DO}
+				if [[ ${p_ob} -le ${p_oe} ]] ; then				
+					printf "${chipnum}%.0s " $(seq ${p_ob} ${p_oe}) | xargs > ${access_home}/${ACCESS_DO}
+					printf "%s " $(seq ${p_ob} ${p_oe}) | xargs >> ${access_home}/${ACCESS_DO}
+				fi
 				ifm_dio_irq_set ${bus} ${addr}
 			fi
 		done
