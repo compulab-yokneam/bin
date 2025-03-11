@@ -44,7 +44,7 @@ function check_params() {
 	[[ -e ${dmap} ]] || err_msg "Issue detected with DIO module in the ${location}"
 	{ read -a D_CHIP ; read -a D_PIN ; } <${dmap}
 	d_num=${#D_CHIP[@]}
-	[[ ${d_num} -gt 0 ]] || err_msg "Issue detected with DIO module in the ${location}"
+	[[ ${d_num} -ge 0 ]] || err_msg "Issue detected with DIO module in the ${location}"
 	[[ ${offset} -ge 0 && ${offset} -lt ${d_num} ]] || err_msg "Invalid pin offset '${offset}'"
 
 	# Check libgpiod version and set additional options if required

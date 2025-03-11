@@ -23,7 +23,6 @@ EOF
 function list_dio_gateway() {
 	. ${IOTDIN_LIB_HOME}/gw.inc
 	local dmap=${GW_ACCESS_IO_HOME}/${GW_ACCESS_DI}
-	#[[ -e ${dmap} ]] || return 1;
 	{ read -a D_CHIP ; read -a D_PIN ; } <${dmap}
 	local di_num=${#D_PIN[@]}
 	D_CHIP=()
@@ -40,7 +39,7 @@ function list_dio_stack () {
 
 	local fslot=${BIDX}	# From slot
 	local tslot=${EIDX}	# To slot
-	local slot_list=$(seq ${fslot} ${tslot} | xargs -x)
+	local slot_list=$(seq ${fslot} ${tslot})
 	local ifm_type=${IFM_TYPE_ND}
 	local dmap=
 	local di_num=
@@ -52,34 +51,34 @@ function list_dio_stack () {
 		ifm_type=$(ls ${slot_home} | grep "${FPE_IFM}\.")
 		ifm_type="${ifm_type##*.}"
 		[[ "${ifm_type}" == "DI8O8" || "${ifm_type}" == "CAN" ]] || continue
+		di_num=0
 		dmap=${slot_home}/${FPE_ACCESS}/${ACCESS_DI}
-		{ read -a D_CHIP ; read -a D_PIN ; } <${dmap}
-		di_num=${#D_PIN[@]}
-		D_CHIP=()
-		D_PIN=()
+		if [[ -e ${dmap} ]] ; then
+			{ read -a D_CHIP ; read -a D_PIN ; } <${dmap}
+			di_num=${#D_PIN[@]}
+			D_CHIP=()
+			D_PIN=()
+		fi
+		do_num=0
 		dmap=${slot_home}/${FPE_ACCESS}/${ACCESS_DO}
-		{ read -a D_CHIP ; read -a D_PIN ; } <${dmap}
-		do_num=${#D_PIN[@]}
+		if [[ -e ${dmap} ]] ; then
+			{ read -a D_CHIP ; read -a D_PIN ; } <${dmap}
+			do_num=${#D_PIN[@]}
+			D_CHIP=()
+			D_PIN=()
+		fi
 		printf "Stack Slot ${STACK_SLOTS[${i}]}:\t%s\t(%dx DI; %dx DO)\n" ${ifm_type} ${di_num} ${do_num}
 	done
 }
 
 function main() {
-	VALID_ARGS=$(getopt -o h -- "$@")
-	if [[ $? -ne 0 ]]; then
-		usage 1
-	fi
-
-	eval set -- "$VALID_ARGS"
-	while [ : ] ; do
-		case "${1}" in
-		-h)
+	while getopts ':h' OPTION; do
+		case "${OPTION}" in
+		"h")
 			usage 0
-			break
 			;;
-		--)
-			shift;
-			break
+		?)
+			usage 1
 			;;
 		esac
 	done
