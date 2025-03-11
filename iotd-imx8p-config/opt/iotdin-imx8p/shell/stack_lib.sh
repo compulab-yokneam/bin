@@ -210,7 +210,7 @@ function ifm_grant_access() {
 				for (( i=0 ; i<${#IFM_ARR_USB[@]} ; i++ )) ; do
 					if [[ "${IFM_ARR_USB[${i}]}" -eq "${slot}" ]] ; then
 						for p in {0..3}; do
-							t=${TTY_DEV_HOME}/${TTY_DEV_PTRN}_${i}_${p}
+							t=${TTY_DEV_HOME}/${TTY_DEV_RSx_PTRN}_${i}_${p}
 							if [[ -L ${t} && -c $(readlink -f ${t}) ]]; then
 								ln -s ${t} ${access_home}/${ACCESS_TTY}${p}
 							fi
@@ -284,20 +284,78 @@ function ifm_grant_access() {
 				fi
 				;;
 			"MESH")
-				# Create access files for BT devices
-				modprobe btusb > /dev/null 2>&1
-				sleep 1
 				for (( i=0 ; i<${#IFM_ARR_USB[@]} ; i++ )) ; do
 					if [[ "${IFM_ARR_USB[${i}]}" -eq "${slot}" ]] ; then
-						local dev_home=${MESH_DEV_PREFIX}$((i+1))${MESH_BT_DEV_SUFFIX}
-						if [[ -d ${dev_home} ]]; then
-							local idvendor=$(cat ${dev_home}/../../${IDVENDOR})
-							local idprod=$(cat ${dev_home}/../../${IDPROD})
-							if [[ "${idvendor,,}" == "${MESH_USB_IDVENDOR,,}" && "${idprod,,}" == "${MESH_BT_USB_IDPROD,,}" ]] ; then
-								local mesh=$(ls ${dev_home})
-								[[ -L ${MESH_BT_HOME}/${mesh} ]] && ln -s ${MESH_BT_HOME}/${mesh} ${access_home}/${ACCESS_MESH}
-							fi
-						fi
+						# Get idVendor & idProduct
+						local devid_home=${MESH_DEV_PREFIX}$((i+1))
+						local idvendor=$(cat ${devid_home}/${IDVENDOR})
+						local idprod=$(cat ${devid_home}/${IDPROD})
+						# Detect MESH subtype (e.g. NORD, SILAB, etc.)
+						EEPROM_DEV="$(_slot_get_eeprom ${slot})"
+						local IFM_CFG=$(eeprom_print_prod_opts ${EEPROM_DEV})
+						[[ -n ${IFM_CFG} ]] || continue
+						local mtype=${IFM_CFG#W}
+						rm ${access_home}/${FPE_IFM_SUBTYPE}.* > /dev/null 2>&1
+						case "${mtype}" in
+							"NORD")
+								# Create access files for BT devices
+								modprobe btusb > /dev/null 2>&1
+								sleep 1
+								touch ${access_home}/${FPE_IFM_SUBTYPE}.${mtype}
+								[[ "${idvendor,,}" == "${MESH_USB_IDVENDOR_NORD,,}" ]] || break
+								if  [[ "${idprod,,}" == "${MESH_USB_IDPROD_NORD_BT,,}" ]] ; then
+									# BT device
+									local dev_home=${devid_home}${MESH_BT_DEV_SUFFIX}
+									if [[ -d ${dev_home} ]]; then
+										local mesh=$(ls ${dev_home})
+										[[ -L ${MESH_BT_HOME}/${mesh} ]] && ln -s ${MESH_BT_HOME}/${mesh} ${access_home}/${ACCESS_MESH_NORD_BT}
+									fi
+									break
+								fi
+								if  [[ "${idprod,,}" == "${MESH_USB_IDPROD_NORD,,}" ]] ; then
+									# TTY device
+									local tty=${TTY_DEV_HOME}/${TTY_DEV_MESH_PTRN}_${i}
+									if [[ -L ${tty} && -c $(readlink -f ${tty}) ]] ; then
+										ln -s ${tty} ${access_home}/${ACCESS_MESH_NORD}
+									else
+										# Alternative way
+										local dev_home=$(readlink -e ${devid_home}${MESH_TTY_DEV_SUFFIX})
+										if [[ -d ${dev_home} ]]; then
+											tty=${TTY_DEV_HOME}/$(ls ${dev_home})
+											[[ -c ${tty} ]] && ln -s ${tty} ${access_home}/${ACCESS_MESH_NORD}
+										fi
+									fi
+									break
+								fi
+								;;
+							"SILAB")
+								# Create access files for tty device
+								modprobe cp210x > /dev/null 2>&1
+								sleep 1
+								touch ${access_home}/${FPE_IFM_SUBTYPE}.${mtype}
+								if [[ "${idvendor,,}" == "${MESH_USB_IDVENDOR_SILAB,,}" && "${idprod,,}" == "${MESH_USB_IDPROD_SILAB,,}" ]] ; then
+									local tty=${TTY_DEV_HOME}/${TTY_DEV_MESH_PTRN}_${i}
+									if [[ -L ${tty} && -c $(readlink -f ${tty}) ]]; then
+										ln -s ${tty} ${access_home}/${ACCESS_MESH_SILAB}
+									else
+										# Alternative way
+										local dev_home=$(readlink -e ${devid_home}${MESH_TTYUSB_DEV_SUFFIX})
+										if [[ -d ${dev_home} ]]; then
+											tty=${TTY_DEV_HOME}/$(basename ${dev_home})
+											[[ -c ${tty} ]] && ln -s ${tty} ${access_home}/${ACCESS_MESH_SILAB}
+										fi
+									fi
+									# Create access files for gpio chip
+									local dev_home=$(readlink -e ${MESH_DEV_PREFIX}$((i+1))${MESH_GPIO_DEV_SUFFIX})
+									local chip=${GPIO_DEV_HOME}/$(basename ${dev_home})
+									if [[ -c ${chip} ]] ; then
+										ln -s ${chip} ${access_home}/${ACCESS_GPIO}
+									fi
+								fi
+								;;
+							*)
+								;;
+						esac
 						break
 					fi
 				done
