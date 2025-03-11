@@ -1,0 +1,142 @@
+#!/bin/bash
+
+SCR_NAME=$(basename ${BASH_SOURCE[0]})
+[[ -z ${IOTDIN_LIB_HOME} ]] && export IOTDIN_LIB_HOME=$(dirname $(readlink -e ${BASH_SOURCE[0]}))
+
+# Includes
+. ${IOTDIN_LIB_HOME}/common.inc
+. ${IOTDIN_LIB_HOME}/dio_lib.inc
+. ${IOTDIN_LIB_HOME}/stack_lib.inc
+
+function usage() {
+	local ret=${1:-0}
+cat << EOF
+Usage: ${SCR_NAME} [options]
+
+Print Digital I/O (DIO) to GPIO chip/line mapping info for the specified DIO module (or for all if none is specified)
+
+Options:
+ -m <module>
+     module: DIO module location:
+         m|M - Main Gateway
+         a|A - Virtulal slot A
+         ...
+         h|H - Virtulal slot H
+ 
+ -h:    display this help and exit
+EOF
+	exit ${ret}
+}
+
+export DELIM_LINE="~~~~~~~~~~~~~~~~~"
+
+function dio_map_show() {
+	local di_num=${#DI_PIN[@]}
+	local do_num=${#DO_PIN[@]}
+	# Header
+	printf "\t%s\n\t%s %s %s\n\t%-7s %s %s\n\t%s\n" "${DELIM_LINE}" "Digital" "GPIO" "GPIO" "Signal" "Chip" "Line" "${DELIM_LINE}"
+	for (( i=0; i<${di_num}; i++ )) ; do
+		printf "\t%s %s:   %-2s   %-2s\n" "DI" "${i}" "${DI_CHIP[${i}]}" "${DI_PIN[${i}]}"
+	done
+	[[ ${di_num} -eq 0 ]] || printf "\t%s\n" "${DELIM_LINE}"
+	for (( i=0; i<${#DO_PIN[@]}; i++ )) ; do
+		printf "\t%s %s:   %-2s   %-2s\n" "DO" "${i}" "${DO_CHIP[${i}]}" "${DO_PIN[${i}]}"
+	done
+	[[ ${do_num} -eq 0 ]] || printf "\t%s\n" "${DELIM_LINE}"
+	printf "\n"
+}
+
+function list_dio_map_gateway() {
+	. ${IOTDIN_LIB_HOME}/gw.inc
+	local dmap=${GW_ACCESS_IO_HOME}/${GW_ACCESS_DI}
+	{ read -a DI_CHIP ; read -a DI_PIN ; } <${dmap}
+	local di_num=${#DI_PIN[@]}
+	dmap=${GW_ACCESS_IO_HOME}/${GW_ACCESS_DO}
+	{ read -a DO_CHIP ; read -a DO_PIN ; } <${dmap}
+	local do_num=${#DO_PIN[@]}
+	printf "Main Gateway:\t%s\t(%dx DI; %dx DO)\n" ${GW_DIO} ${di_num} ${do_num}
+	dio_map_show
+}
+
+function list_dio_map_stack () {
+	. ${IOTDIN_LIB_HOME}/stack_lib.inc
+	. ${IOTDIN_LIB_HOME}/ifm.inc
+
+	local fslot=${1:-${BIDX}}	# From slot
+	local tslot=${2:-${EIDX}}	# To slot
+	
+	local slot_list=$(seq ${fslot} ${tslot})
+	local ifm_type=${IFM_TYPE_ND}
+	local dmap=
+	local di_num=
+	local do_num=
+
+	for i in ${slot_list}; do
+		local slot_home=${FPE_HOME}/${STACK_SLOTS[${i}]}
+		[[ -d ${slot_home} ]] || continue
+		ifm_type=$(ls ${slot_home} | grep "${FPE_IFM}\.")
+		ifm_type="${ifm_type##*.}"
+		[[ "${ifm_type}" == "DI8O8" || "${ifm_type}" == "CAN" ]] || continue
+		di_num=0
+		dmap=${slot_home}/${FPE_ACCESS}/${ACCESS_DI}
+		if [[ -e ${dmap} ]] ; then
+			{ read -a DI_CHIP ; read -a DI_PIN ; } <${dmap}
+			di_num=${#DI_PIN[@]}
+		fi
+		do_num=0
+		dmap=${slot_home}/${FPE_ACCESS}/${ACCESS_DO}
+		if [[ -e ${dmap} ]] ; then
+			{ read -a DO_CHIP ; read -a DO_PIN ; } <${dmap}
+			do_num=${#DO_PIN[@]}
+		fi
+		printf "Stack Slot ${STACK_SLOTS[${i}]}:\t%s\t(%dx DI; %dx DO)\n" ${ifm_type} ${di_num} ${do_num}
+		dio_map_show
+	done
+}
+
+function list_dio_map() {
+	local slot=${1:-''}
+	if [[ -z ${slot} || "${slot}" == "M" ]] ; then
+		list_dio_map_gateway
+		[[ "${slot}" == "M" ]] && return
+	fi
+
+	local fslot=${BIDX}	# From slot A
+	local tslot=${EIDX}	# To slot H
+	if [[ -n ${slot} ]] ; then
+		local slot_home=${FPE_HOME}/${slot^^}
+		[[ -d ${slot_home} ]] || err_msg "No DIO module detected in the ${location}"
+		local ifm_type=$(ls ${slot_home} | grep "${FPE_IFM}\.")
+		ifm_type="${ifm_type##*.}"
+		[[ "${ifm_type}" == "DI8O8" || "${ifm_type}" == "CAN" ]] || err_msg "No DIO module detected in the ${location}"
+		# DIO detected in the requested slot
+		fslot=${STACK_SLOTS2IDX[${slot}]}	# From slot
+		tslot=${fslot}						# To slot
+	fi
+	list_dio_map_stack ${fslot} ${tslot}
+}
+
+function main() {
+	local slot=
+
+	while getopts ':hm:' OPTION; do
+		case "${OPTION}" in
+		"m")
+			slot="${OPTARG}"
+			[[ -n ${slot} ]] || err_msg "DIO module location is missing"
+			[[ "${slot}" =~ [a-hA-HmM] ]] || err_msg "Invalid DIO module location '${slot}'"
+			slot=${slot^^}
+			;;
+		"h")
+			usage 0
+			;;
+		?)
+			usage 1
+			;;
+		esac
+	done
+
+	list_dio_map ${slot}
+}
+
+main $@
