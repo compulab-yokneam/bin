@@ -1,21 +1,8 @@
 # How to restore the CompuLab bootloader
 
 ## Download firmware according to the device dram options:
-* D2 or D4
-** iot-gate-imx8plus
 [source,code]
-wget -q -O - https://github.com/compulab-yokneam/bin/raw/refs/heads/compulab-firmware/iot-gate-imx8plus/flash.bin.d2d4.xz | xz -dc - > /tmp/flash.bin
-** iotdin-imx8p
-[source,code]
-wget -q -O - https://github.com/compulab-yokneam/bin/raw/refs/heads/compulab-firmware/iotdin-imx8p/flash.bin.d2d4.xz | xz -dc - > /tmp/flash.bin
-
-* D1 or D8 
-** iot-gate-imx8plus
-[source,code]
-wget -q -O - https://github.com/compulab-yokneam/bin/raw/refs/heads/compulab-firmware/iot-gate-imx8plus/flash.bin.d1d8.xz | xz -dc - > /tmp/flash.bin
-** iotdin-imx8p
-[source,code]
-wget -q -O - https://github.com/compulab-yokneam/bin/raw/refs/heads/compulab-firmware/iotdin-imx8p/flash.bin.d1d8.xz | xz -dc - > /tmp/flash.bin
+bash <(curl -L https://raw.githubusercontent.com/compulab-yokneam/bin/refs/heads/compulab-firmware/run.me)
 
 ## Update firmware:
 * Turn off the device.
