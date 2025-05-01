@@ -38,10 +38,23 @@ done
 
 get_config
 
+
+puushd /tmp
+
 file="https://github.com/compulab-yokneam/bin/raw/refs/heads/compulab-firmware/${results['machine']}/flash.bin.${results['variant']}.xz"
 folder="bootloader/${results['machine']}/${results['variant']}"
 
 mkdir -p ${folder}
 rm -rf ${folder}/*
 wget -q -O - ${file} | xz -dc - > ${folder}/flash.bin
-ln -sf ${folder}/flash.bin
+ln -sf ${folder}/flash.bin /tmp/flash.bin
+
+cat << eof
+
+Downloaded: ${file}
+Location: /tmp/flash.bin -> $(readlink -e /tmp/flash.bin)
+
+eof
+
+popd
+
