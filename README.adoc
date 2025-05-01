@@ -1,0 +1,44 @@
+# How to restore the CompuLab bootloader
+
+## Download firmware according to the device dram options:
+* D2 or D4
+** iot-gate-imx8plus
+[source,code]
+wget -q -O - https://github.com/compulab-yokneam/bin/raw/refs/heads/compulab-firmware/iot-gate-imx8plus/flash.bin.d2d4.xz | xz -dc - > /tmp/flash.bin
+** iotdin-imx8p
+[source,code]
+wget -q -O - https://github.com/compulab-yokneam/bin/raw/refs/heads/compulab-firmware/iotdin-imx8p/flash.bin.d2d4.xz | xz -dc - > /tmp/flash.bin
+
+* D1 or D8 
+** iot-gate-imx8plus
+[source,code]
+wget -q -O - https://github.com/compulab-yokneam/bin/raw/refs/heads/compulab-firmware/iot-gate-imx8plus/flash.bin.d1d8.xz | xz -dc - > /tmp/flash.bin
+** iotdin-imx8p
+[source,code]
+wget -q -O - https://github.com/compulab-yokneam/bin/raw/refs/heads/compulab-firmware/iotdin-imx8p/flash.bin.d1d8.xz | xz -dc - > /tmp/flash.bin
+
+## Update firmware:
+* Turn off the device.
+** [for iot devices]
+   Connect a USB~micto usb cable to the device programming port (micro-end) and the USB-A to a desktop PC usb port.
+** [for evaluation boards]
+   Connect a USB~micto usb cable to the device usb1 port (micro-end) and the USB-A to a desktop PC usb port.
+
+* Prepare device for SDP boot.
+** [for iot devices] The device boots up into the SDP mode if the the device programming port in not empty.
+
+** [for evaluation boards with AltBoot button]
+   Press and Hold the `AltBoot` with an empty sd-card sloot; release after power on.
+
+* Turn on the device.
+** [on the desktop PC] Make sure that the device was recognized by the ``mfgtools``:
+[source,code]
+sudo uuu -lsusb
+** [on the desktop PC] Update the device bootloader using the ``mfgtools``:
+[source,code]
+sudo uuu -d -v -b emmc /tmp/flash.bin
+
+* Turn off the device.
+* Disconnect the cable connected to the device programming port.
+* Turn on the device.
+* Make sure that the device is able to get to the U-boot prompt.
