@@ -1,0 +1,47 @@
+#!/bin/bash
+
+declare      order=(machine variant)
+declare -A configs=( [machine]="iot-gate-imx8plus iotdin-imx8p mcm-imx8m-plus som-imx8m-plus ucm-imx8m-plus ucm-imx8m-plus-sbev" [variant]="d2d4 d1d8" )
+declare -A results=()
+
+function select_function() {
+
+    select_string=${select_array[@]}
+    PS3="${1}  (Ctrl^C -- exit) : "
+    select i in $select_string; do
+        [[ -z ${i} ]] && echo "Invalid option -(" || case $i in
+        default)
+        break
+        ;;
+        *)
+        _select=${i}
+        break
+        ;;
+        esac
+    done # select
+}
+
+function get_config() {
+
+for _cfg in ${order[@]}; do
+
+    _select=""
+    declare -a select_array=${configs[${_cfg}]}
+    select_function ${_cfg}
+    declare -a select_array=${options[${_select}]}
+    select_function ${_select}
+    results[${_cfg}]=${_select}
+
+done
+
+}
+
+get_config
+
+file="https://github.com/compulab-yokneam/bin/blob/compulab-firmware/${results['machine']}/flash.bin.${results['variant']}.xz"
+folder="bootloader/${results['machine']}/${results['variant']}"
+
+mkdir -p ${folder}
+rm -rf ${folder}/*
+wget -q -O - ${file} | xz -dc - > ${folder}/flash.bin
+ln -sf ${folder}/flash.bin
