@@ -1,0 +1,16 @@
+#!/bin/bash
+
+WD=/tmp/wd
+wd=/dev/watchdog0
+
+touch ${WD}
+
+while [ 1 ];do
+	[[ -f ${WD} ]] || {
+		echo "Service ${wd} stopped" > /dev/kmsg
+		exit 0
+	}
+	echo "Serverd ${wd}" > /dev/kmsg
+	touch ${wd} &>/dev/null
+	sleep 5
+done;

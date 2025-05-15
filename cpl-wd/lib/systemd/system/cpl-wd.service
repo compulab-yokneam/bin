@@ -1,0 +1,13 @@
+[Unit]
+Description=CompuLab WD
+After=network.target
+
+[Service]
+Type=forking
+ExecStart=/opt/cpl-wd/bin/wd
+TimeoutSec=0
+RemainAfterExit=yes
+GuessMainPID=no
+
+[Install]
+WantedBy=multi-user.target
