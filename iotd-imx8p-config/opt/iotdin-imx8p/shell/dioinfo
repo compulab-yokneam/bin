@@ -105,6 +105,7 @@ function list_dio_map() {
 	local tslot=${EIDX}	# To slot H
 	if [[ -n ${slot} ]] ; then
 		local slot_home=${FPE_HOME}/${slot^^}
+		local location="Stack Slot ${slot^^}"
 		[[ -d ${slot_home} ]] || err_msg "No DIO module detected in the ${location}"
 		local ifm_type=$(ls ${slot_home} | grep "${FPE_IFM}\.")
 		ifm_type="${ifm_type##*.}"
