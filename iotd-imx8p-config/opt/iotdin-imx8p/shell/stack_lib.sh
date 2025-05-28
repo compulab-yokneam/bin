@@ -178,6 +178,8 @@ function ifm_grant_access_DIxOx() {
 				esac
 				local addr=$((DIxOx_GPIOCHIP_BASEADDR + i))
 				local bus=${DIxOx_GPIOCHIP_BUS}
+				local base=$(readlink -e ${I2C_BUS}/${bus}-00${addr}/gpio/gpiochip*/base)
+				[[ -n ${base} ]] && ln -s ${base} ${access_home}/${ACCESS_GPIO_BASE}
 				local chip=$(basename ${I2C_BUS}/${bus}-00${addr}/gpiochip*)
 				[[ -c ${GPIO_DEV_HOME}/${chip} ]] || return ${RET_OK} ;
 				ln -s ${GPIO_DEV_HOME}/${chip} ${access_home}/${ACCESS_GPIO}

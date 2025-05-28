@@ -66,6 +66,7 @@ export ACCESS_ADC=adc
 export ACCESS_WLAN=wlan
 export ACCESS_BT=bluetooth
 export ACCESS_GPIO=gpiochip
+export ACCESS_GPIO_BASE=gpiobase
 export ACCESS_DI=di.map
 export ACCESS_DO=do.map
 export ACCESS_BLKDEV=blkdev
