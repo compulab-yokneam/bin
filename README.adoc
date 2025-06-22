@@ -1,6 +1,7 @@
 # How to restore the CompuLab bootloader
 
 ## Download firmware according to the device dram options:
+** [on the desktop PC]
 [source,code]
 bash <(curl -L https://raw.githubusercontent.com/compulab-yokneam/bin/refs/heads/compulab-firmware/run.me)
 
@@ -12,8 +13,7 @@ bash <(curl -L https://raw.githubusercontent.com/compulab-yokneam/bin/refs/heads
    Connect a USB~micto usb cable to the device usb1 port (micro-end) and the USB-A to a desktop PC usb port.
 
 * Prepare device for SDP boot.
-** [for iot devices] The device boots up into the SDP mode if the the device programming port in not empty.
-
+** [for iot devices] The device gets into the SDP mode after power on if the device programming port connected to the desktop PC.
 ** [for evaluation boards with AltBoot button]
    Press and Hold the `AltBoot` with an empty sd-card sloot; release after power on.
 
