@@ -18,9 +18,9 @@ Command:
  -m <module> <offset>
      module: DIO module location:
          m|M - Main Gateway
-         a|A - Virtulal slot A
+         a|A - Virtual slot A
          ...
-         h|H - Virtulal slot H
+         h|H - Virtual slot H
      offset: input pin offset: <0..MaxOffset>
 Options:
  -h:    display this help and exit
