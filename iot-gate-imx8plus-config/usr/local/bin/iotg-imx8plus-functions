@@ -21,6 +21,7 @@ declare -A IE_DETECTED=(
 		[b]=${IE_DET_DEF}
 		[c]=${IE_DET_DEF}
 		[d]=${IE_DET_DEF}
+		[e]=${IE_DET_DEF}
 		[x]=${IE_DET_DEF}
 )
 
@@ -30,6 +31,7 @@ declare -A IE_SUPPORTED=(
 		[b]="RS232 | RS485"
 		[c]="RS232 | RS485 | CAN"
 		[d]="DI4O4"
+		[e]="CAN"
 		[x]="TPM | eMMC | ADC"
 )
 
@@ -39,6 +41,7 @@ declare -a IE_SLOT_LCASE=(
 		"b"
 		"c"
 		"d"
+		"e"
 		"x"
 )
 
@@ -147,6 +150,11 @@ function detect_ie_type() {
 	"a" | "b" | "c" | "d")
 		pod_det_gpios=${POD_DET_GPIOS[${slot}]}
 		;;
+	"e")
+		# The permanent CAN interface can be treated as a slot that is always populated with the IE-CAN module
+		IE_DETECTED[${slot}]="CAN"
+		return 0;
+		;;
 	*)
 		return 1;
 		;;
@@ -190,7 +198,7 @@ function detect_ie_type() {
 function get_ie_type() {
 	local slot=${1:-}
 	case ${slot} in
-	"a" | "b" | "c" | "d")
+	"a" | "b" | "c" | "d" | "e")
 		detect_ie_type ${slot}
 		return $?;
 		;;
