@@ -1,0 +1,70 @@
+#!/bin/bash
+#
+
+set -e
+
+user_id=$(id -u)
+if [[ ${user_id} -ne 0 ]];then
+cat << eof
+	Administrator credentials are required.
+	current user id is: [ ${user_id} ]
+eof
+exit 13
+fi
+
+# Availabe device tree tarball files
+declare -A dtbs_available=()
+dtbs_available+=(['6.1.22']='https://github.com/compulab-yokneam/bin/raw/refs/heads/dtbs/6.1.22/dtbs.tar.bz2')
+dtbs_available+=(['6.6.52']='https://github.com/compulab-yokneam/bin/raw/refs/heads/dtbs/6.6.52/dtbs.tar.bz2')
+
+# Get/detect the kernel version
+ver=${ver:-$(uname -r | awk -F "-" '$0=$1')}
+
+device_tree_location=${dtbs_available[${ver}]:-"not_available"}
+
+if [[ ${device_tree_location} == "not_available" ]];then
+cat << eof
+	The kernel version [ ${ver} ] is not in the supported version's list.
+	Supported versions are: ${!dtbs_available[@]}
+eof
+exit 22
+fi
+
+function init() {
+	root=$(findmnt / -o SOURCE -n)
+	boot=${root:0:-1}1
+	umount -l ${boot} &>/dev/null || true
+	mpoint=/tmp/rfs/${ver}/boot
+	mkdir -p ${mpoint} || true
+	mount ${boot} ${mpoint} &>/dev/null
+}
+
+function back_up() {
+	back_up_dir=/media/backup/${ver}/$(date +%Y%m$d-%H%M%S)/
+	mkdir -p ${back_up_dir}
+	cp -a ${mpoint}/*.{dtb,dtbo} ${back_up_dir}
+}
+
+function fini() {
+	umount ${boot} &>/dev/null || true
+}
+
+function do_it() {
+	wget -qO - ${device_tree_location} | tar -C ${mpoint} -xjf -
+}
+
+function d0ne() {
+cat << eof
+
+The boot folder update with the files from: ${device_tree_location} 
+Back up is at: ${back_up_dir}
+Reboot the device.
+
+eof
+}
+
+init
+back_up
+do_it
+fini
+d0ne
