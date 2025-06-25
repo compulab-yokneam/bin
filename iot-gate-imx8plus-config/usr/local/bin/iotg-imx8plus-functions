@@ -32,7 +32,7 @@ declare -A IE_SUPPORTED=(
 		[c]="RS232 | RS485 | CAN"
 		[d]="DI4O4"
 		[e]="CAN"
-		[x]="TPM | eMMC | ADC"
+		[x]="TPM | eMMC | ADC | M.2"
 )
 
 # Slot names
@@ -48,18 +48,21 @@ declare -a IE_SLOT_LCASE=(
 # Add-ons
 ## I2C bus
 declare -A ADDON_BUS=(
+		[M.2]="4"
 		[eMMC]="4"
 		[ADC]="4"
 		[TPM]="4"
 )
 ## I2C slave addr
 declare -A ADDON_CHIP=(
+		[M.2]="0x21"
 		[eMMC]="0x20"
 		[ADC]="0x48"
 		[TPM]="0x54"
 )
 ## Reg offset
 declare -A ADDON_OFFSET=(
+		[M.2]="0"
 		[eMMC]="0"
 		[ADC]="2"
 		[TPM]="0"
@@ -67,6 +70,7 @@ declare -A ADDON_OFFSET=(
 
 # Add on board types
 declare -a M2_ADDON_LIST=(
+		"M.2"
 		"eMMC"
 		"ADC"
 		"TPM"
@@ -113,6 +117,7 @@ function detect_m2_type() {
 	# Detect add-on board in M.2 connector by access a corresponding slave on I2C bus:
 	# - TPM add-on board:  i2c bus 4, slave address 0x54-0x58 (24C08 EEPROM)
 	# - eMMC add-on board: i2c bus 4, slave address 0x20 (PCA955 GPIO expander)
+	# - M.2 add-on board: i2c bus 4, slave address 0x21 (PCA955 GPIO expander)
 	# - ADC add-on board:  i2c bus 4, slave address 0x48 (ADS1015 ADC)
 	local m2_type="N/A"
 	for type in ${M2_ADDON_LIST[@]} ; do
