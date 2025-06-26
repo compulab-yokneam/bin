@@ -42,7 +42,7 @@ function init() {
 function back_up() {
 	back_up_dir=/media/backup/${ver}/$(date +%Y%m$d-%H%M%S)/
 	mkdir -p ${back_up_dir}
-	cp -a ${mpoint}/*.{dtb,dtbo} ${back_up_dir}
+	cp -a ${mpoint}/*.dtb* ${back_up_dir} || true
 }
 
 function fini() {
