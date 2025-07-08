@@ -46,14 +46,14 @@ done
 get_config
 
 
-pushd /tmp
+pushd /tmp >/dev/null
 
 file="https://github.com/compulab-yokneam/bin/raw/refs/heads/compulab-firmware/${results['machine']}/flash.bin.${results['variant']}.xz"
 folder="bootloader/${results['machine']}/${results['variant']}"
 
 mkdir -p ${folder}
 rm -rf ${folder}/*
-wget -q -O - ${file} | xz -dc - > ${folder}/flash.bin
+wget --no-check-certificate -q -O - ${file} | xz -dc - > ${folder}/flash.bin
 ln -sf ${folder}/flash.bin /tmp/flash.bin
 
 cat << eof
@@ -61,10 +61,17 @@ cat << eof
 Downloaded: ${file}
 Location: /tmp/flash.bin -> $(readlink -e /tmp/flash.bin)
 
-Issue this command and update the device booltlader:
-	IMX_BOOT=$(readlink -e /tmp/flash.bin) cl-uboot
-
 eof
 
-popd
+CL_UBOOT=cl-uboot.work
+which ${CL_UBOOT} &>/dev/null && {
+	cat $(which ${CL_UBOOT}) | grep -q SRC && P=SRC || P=IMX_BOOT
+cat << eof
 
+Issue this command and update the device booltlader:
+	${P}=$(readlink -e /tmp/flash.bin) cl-uboot
+
+eof
+} || true
+
+popd >/dev/null
