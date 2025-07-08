@@ -1,8 +1,14 @@
 #!/bin/bash
 
+set -e
+
 declare      order=(machine variant)
-declare -A configs=( [machine]="iot-gate-imx8plus iotdin-imx8p mcm-imx8m-plus som-imx8m-plus ucm-imx8m-plus ucm-imx8m-plus-sbev" [variant]="d2d4 d1d8" )
+declare -A configs=( [machine]="iot-gate-imx8 iot-gate-imx8plus iotdin-imx8p mcm-imx8m-plus som-imx8m-plus ucm-imx8m-plus ucm-imx8m-plus-sbev" [variant]="d2d4 d1d8" )
 declare -A results=()
+
+function iot-gate-imx8_func() {
+	configs=( [variant]="otg1_host otg1_device" )
+}
 
 function select_function() {
 
@@ -15,6 +21,7 @@ function select_function() {
         ;;
         *)
         _select=${i}
+	command -v ${_select}_func && ${_select}_func || true
         break
         ;;
         esac
@@ -53,6 +60,9 @@ cat << eof
 
 Downloaded: ${file}
 Location: /tmp/flash.bin -> $(readlink -e /tmp/flash.bin)
+
+Issue this command and update the device booltlader:
+	IMX_BOOT=$(readlink -e /tmp/flash.bin) cl-uboot
 
 eof
 
