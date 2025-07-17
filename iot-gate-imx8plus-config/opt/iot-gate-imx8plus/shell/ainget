@@ -1,0 +1,87 @@
+#!/bin/bash
+
+SCR_NAME=$(basename ${BASH_SOURCE[0]})
+[[ -z ${IOTG_LIB_HOME} ]] && export IOTG_LIB_HOME=$(dirname $(readlink -e ${BASH_SOURCE[0]}))
+
+# Includes
+. ${IOTG_LIB_HOME}/common.inc
+. ${IOTG_LIB_HOME}/stack_lib.inc
+. ${IOTG_LIB_HOME}/dio_lib.inc
+
+MIN_OFFSET=0
+MAX_OFFSET=3
+IIO_BUS=/sys/bus/iio/devices
+IIO_DEV=iio:device0
+
+function msg() {
+	echo "${SCR_NAME}: $@"
+}
+
+function err_msg() {
+	msg "Error: $@"
+	exit 1
+}
+
+function usage() {
+	local ret=${1:-0}
+cat << EOF
+Usage: ${SCR_NAME} [options] <offset>
+
+Read analog input state from the Analog input (ADC) add-on board
+
+Command:
+ offset: analog input pin offset: <0..MaxOffset>, or
+         all inputs if no offset specified
+Options:
+ -h:			display this help and exit
+EOF
+	exit ${ret}
+}
+
+function main() {
+	local slot="${IE_ADC_SLOT}"
+	local offset=
+	local ret=0
+
+	while getopts ':h' OPTION; do
+		case "${OPTION}" in
+		"h")
+			usage 0
+			;;
+		?)
+			usage 1
+			;;
+		esac
+	done
+	offset="${1:-}"
+
+	if [[ -z "${offset}" ]]; then
+		o_b=${AIN_MIN}
+		o_e=${AIN_MAX}
+	else
+		[[ ${offset} =~ ^[${AIN_MIN}-${AIN_MAX}] ]] || err_msg "Invalid analog input pin offset '${offset}'"
+		o_b=${offset}
+		o_e=${offset}
+	fi
+
+	location="I/O Stack Slot ${slot^^}"
+	local slot_home=${FPE_HOME}/${slot^^}
+	[[ -d ${slot_home} ]] || err_msg "No ADC add-on board detected in the ${location}"
+	local ie_type=$(ls ${slot_home} | grep "${IE_TYPE}\.")
+	ie_type="${ie_type##*.}"
+	[[ "${ie_type}" == "${IE_ADC}" ]] || err_msg "No ADC add-on board detected in the ${location}"
+	local adc_dev=$(readlink -e ${slot_home}/${IE_ACCESS}/${ACCESS_ADC})
+	[[ -n ${adc_dev} ]] || err_msg "ADC add-on board: configuration issue: no ADC device detected"
+
+	declare -a state
+	for i in $(seq ${o_b} ${o_e}) ; do
+		state[${i}]=$(cat ${adc_dev}/in_voltage${i}_raw) ; (( ret |= $? ))
+	done
+	[[ ${ret} -ne 0 ]] || echo ${state[@]:${o_b}:$((o_e - o_b + 1))}
+
+	return ${ret}
+}
+
+#set -x
+main $@
+#set +x
