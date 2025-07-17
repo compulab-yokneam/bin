@@ -1,5 +1,5 @@
 [Unit]
-Description=Configure IOT-GATE-iMX8PLUS Industrial I/O modules
+Description=Configure IOT-GATE-iMX8PLUS Industrial I/O modules (legacy)
 After=boot.mount
 ConditionPathExists=/usr/local/bin/iotg-imx8plus-ie-config
 
