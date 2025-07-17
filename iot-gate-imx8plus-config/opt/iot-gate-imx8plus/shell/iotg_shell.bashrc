@@ -1,0 +1,50 @@
+get_device() {
+	[[ -d /sys/devices/soc0 ]] && device=$(udevadm info -ap /sys/devices/soc0 | awk -F"\"" '(/machine/)&&($0=$2)' | cut -d" " -f2 | tr '[:upper:]' '[:lower:]') || device=iot-gate-imx8plus
+	echo ${device}
+}
+
+export IOTG=$(get_device)
+
+IOTG_SHELL_HOME=/opt/${IOTG}/shell
+STACK_LIB=${IOTG_SHELL_HOME}/stack.sh
+
+do_iotg() {
+	${STACK_LIB} $@
+}
+
+GW_LIB=${IOTG_SHELL_HOME}/gw.sh
+
+do_gateway() {
+	${GW_LIB} $@
+}
+usage () {
+cat << eof
+[Ss] - Explore I/O Stack: probe and display (all I/O slots)
+[Vv] - Explore I/O Slot: probe and display (specific I/O slot)
+[Mm] - Manage I/O Stack: validate configuration and grant access (all I/O slots)
+[Gg] - Show Gateway Info (Gateway only)
+[Ii] - Show I/O Stack Info (I/O slots only)
+[Ff] - Show Full Info (Gateway + all I/O slots)
+[Qq] - Quit IOTG shell
+eof
+}
+
+PS1='$(usage)\n\nIOTG shell ( device: ${IOTG} ) > '
+set -m
+
+alias s='do_iotg stack probe'
+alias S='do_iotg stack probe'
+alias v='do_iotg slot probe'
+alias V='do_iotg slot probe'
+alias m='do_iotg stack manage'
+alias M='do_iotg stack manage'
+alias i='do_iotg stack info'
+alias I='do_iotg stack info'
+alias g='do_gateway info'
+alias G='do_gateway info'
+alias f='do_gateway info ; do_iotg stack info'
+alias F='do_gateway info ; do_iotg stack info'
+alias q='exit'
+alias Q='exit'
+alias exit='exit'
+alias quit='exit'
