@@ -197,6 +197,14 @@ function grant_access_m2() {
 
 	# Switch USB Mux
 	usb_mux_set ; sleep 5
+	# Grant access to IMU: should be accessible by all subtypes
+	for iio in $(ls ${IIO_BUS}) ; do
+		local imu=$(cat ${IIO_BUS}/${iio}/name)
+		[[ -n ${imu} ]] || continue
+		[[ "${imu}" =~ "${ACCESS_GYRO}" ]] && ln -s ${IIO_BUS}/${iio} ${ie_home}/${ACCESS_IMU_PREFIX}:${ACCESS_GYRO}
+		[[ "${imu}" =~ "${ACCESS_ACCEL}" ]] && ln -s ${IIO_BUS}/${iio} ${ie_home}/${ACCESS_IMU_PREFIX}:${ACCESS_ACCEL}
+	done
+
 	# Detect MESH card
 	local tty=$(readlink -e /dev/${TTY_IE}${slot})
 	# Grant access if detected
@@ -208,7 +216,7 @@ function grant_access_m2() {
 		for s in ${MESH_SUBTYPE[@]} ; do
 			if [[ "${idvendor,,}" == ${MESH_USB_IDVENDOR[${s}]} ]] ; then
 				if [[ "${idprod,,}" == ${MESH_USB_IDPROD[${s}]} ]] ; then
-					# Set subtype
+					# Set subtype: NORD or SILAB
 					touch ${ie_home}/${IE_SUBTYPE}.${s}
 					# SILAB MESH features 
 					# Grant access to GPIO chip if found 
@@ -222,17 +230,10 @@ function grant_access_m2() {
 		done
 	fi
 	
-	# Switch USB Mux back othervise
+	# Switch USB Mux back othervise (no MESH card detected)
 	usb_mux_reset
-	# Set subtype: IMU
+	# Set default subtype: IMU
 	touch ${ie_home}/${IE_SUBTYPE}.${ie_subtype}
-	# Grant access to IMU
-	for iio in $(ls ${IIO_BUS}) ; do
-		local imu=$(cat ${IIO_BUS}/${iio}/name)
-		[[ -n ${imu} ]] || continue
-		[[ "${imu}" =~ "${ACCESS_GYRO}" ]] && ln -s ${IIO_BUS}/${iio} ${ie_home}/${ACCESS_GYRO}
-		[[ "${imu}" =~ "${ACCESS_ACCEL}" ]] && ln -s ${IIO_BUS}/${iio} ${ie_home}/${ACCESS_ACCEL}
-	done
 }
 
 function grant_access_tpm() {

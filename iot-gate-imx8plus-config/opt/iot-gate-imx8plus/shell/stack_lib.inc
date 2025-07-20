@@ -17,6 +17,7 @@ export ACCESS_TPM=tpm
 export ACCESS_TPMRM=tpmrm
 export ACCESS_DI=di.map
 export ACCESS_DO=do.map
+export ACCESS_IMU_PREFIX=imu
 export ACCESS_ACCEL=accel
 export ACCESS_GYRO=gyro
 
