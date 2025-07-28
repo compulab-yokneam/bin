@@ -1,0 +1,32 @@
+#!/bin/bash
+#
+
+set -e
+
+FILE="https://github.com/compulab-yokneam/bin/raw/refs/heads/balena/iotd-imx8p/iotd-imx8p-config.tar.bz2"
+
+function init() {
+    mount -o remount,rw /
+}
+
+function fini() {
+    mount -o remount,ro /
+}
+
+function do_it() {
+    wget -qO - ${FILE} | tar -C / -xjf -
+}
+
+function d0ne() {
+cat << eof
+
+The ${FILE} has been deployed to the device.
+Reboot the device.
+
+eof
+}
+
+init
+do_it
+fini
+d0ne
