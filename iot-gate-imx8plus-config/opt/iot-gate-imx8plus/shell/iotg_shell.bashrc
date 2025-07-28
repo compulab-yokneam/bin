@@ -23,6 +23,7 @@ cat << eof
 [Ss] - Explore I/O Stack: probe and display (all I/O slots)
 [Vv] - Explore I/O Slot: probe and display (specific I/O slot)
 [Mm] - Manage I/O Stack: validate configuration and grant access (all I/O slots)
+[Ww] - Manage Gateway: validate configuration and grant access
 ~~~~ Show Info
 [Ii] - Show I/O Stack Info (I/O slots only)
 [Gg] - Show Gateway Info (Gateway only)
@@ -43,6 +44,8 @@ alias m='do_iotg stack manage'
 alias M='do_iotg stack manage'
 alias i='do_iotg stack info'
 alias I='do_iotg stack info'
+alias w='do_gateway manage'
+alias W='do_gateway manage'
 alias g='do_gateway info'
 alias G='do_gateway info'
 alias f='do_gateway info ; do_iotg stack info'

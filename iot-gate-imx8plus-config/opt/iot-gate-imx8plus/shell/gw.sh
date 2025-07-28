@@ -73,6 +73,9 @@ case ${opt} in
 	"info")
 		gw_info_frontplane "Gateway Access Info:"
 		;;
+	"manage")
+		gw_grant_access
+		;;
 	"source")
 		# Dummy option - applied when file is sourced by external script for further usage
 		;;
