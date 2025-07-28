@@ -19,12 +19,15 @@ do_gateway() {
 }
 usage () {
 cat << eof
+~~~~ Explore and Manage
 [Ss] - Explore I/O Stack: probe and display (all I/O slots)
 [Vv] - Explore I/O Slot: probe and display (specific I/O slot)
 [Mm] - Manage I/O Stack: validate configuration and grant access (all I/O slots)
-[Gg] - Show Gateway Info (Gateway only)
+~~~~ Show Info
 [Ii] - Show I/O Stack Info (I/O slots only)
+[Gg] - Show Gateway Info (Gateway only)
 [Ff] - Show Full Info (Gateway + all I/O slots)
+~~~~ Misc
 [Qq] - Quit IOTG shell
 eof
 }
