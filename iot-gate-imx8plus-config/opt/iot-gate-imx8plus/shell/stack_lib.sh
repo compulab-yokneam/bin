@@ -65,7 +65,7 @@ function detect_m2_type() {
 	# - eMMC add-on board: i2c bus 4, slave address 0x20 (PCA955 GPIO expander)
 	# - M2 add-on board: i2c bus 4, slave address 0x21 (PCA955 GPIO expander)
 	# - ADC add-on board:  i2c bus 4, slave address 0x48 (ADS1015 ADC)
-	local m2_type="${IE_TYPE_INV}"
+	local m2_type="${IE_TYPE_ND}"
 	for type in ${M2_ADDON_LIST[@]} ; do
 		bus=${ADDON_BUS[${type}]}
 		addr=${ADDON_CHIP[${type}]}
