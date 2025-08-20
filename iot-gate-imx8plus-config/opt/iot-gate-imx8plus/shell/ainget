@@ -59,7 +59,9 @@ function main() {
 		o_b=${AIN_MIN}
 		o_e=${AIN_MAX}
 	else
-		[[ ${offset} =~ ^[${AIN_MIN}-${AIN_MAX}] ]] || err_msg "Invalid analog input pin offset '${offset}'"
+		[[ ${offset} =~ ^[${AIN_MIN}-${AIN_MAX}]+$ ]] || err_msg "Invalid analog input pin offset '${offset}'"
+		offset=$((10#${offset}))
+		[[ ${offset} =~ ^[${AIN_MIN}-${AIN_MAX}]$ ]] || err_msg "Invalid analog input pin offset '${offset}'"
 		o_b=${offset}
 		o_e=${offset}
 	fi
