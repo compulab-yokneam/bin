@@ -18,7 +18,9 @@ fast_reboot() {
 
 usage () {
 cat << eof
+~~~~ EEPROM
 [Dd] - Dump IFM's EEPROM
+~~~~ Misc
 [Bb] - Fast reboot
 [Qq] - Quit Expert shell
 eof

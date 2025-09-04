@@ -24,11 +24,14 @@ do_extra() {
 
 usage () {
 cat << eof
+~~~~ Explore and Manage
 [Ss] - Explore Stack: probe and display (all slots)
 [Vv] - Explore Slot: probe and display (specific slot)
 [Mm] - Manage Stack: validate configuration and grant access (all slots)
+~~~~ Show Info
 [Ii] - Show Stack Info
 [Gg] - Show Gateway Info
+~~~~ Misc
 [Xx] - Extra functionality (experts only)
 [Qq] - Quit IOTDIN shell
 eof
