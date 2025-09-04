@@ -28,6 +28,7 @@ cat << eof
 [Ss] - Explore Stack: probe and display (all slots)
 [Vv] - Explore Slot: probe and display (specific slot)
 [Mm] - Manage Stack: validate configuration and grant access (all slots)
+[Ww] - Manage Gateway: validate configuration and grant access
 ~~~~ Show Info
 [Ii] - Show Stack Info
 [Gg] - Show Gateway Info
@@ -48,6 +49,8 @@ alias m='do_iotdin stack manage'
 alias M='do_iotdin stack manage'
 alias i='do_iotdin stack info'
 alias I='do_iotdin stack info'
+alias w='do_gateway manage'
+alias W='do_gateway manage'
 alias g='do_gateway info'
 alias G='do_gateway info'
 alias x='do_extra'
