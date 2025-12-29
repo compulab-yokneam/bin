@@ -1,0 +1,14 @@
+#!/bin/bash
+
+# Get the device tree board name; let's call it DTBN.
+fdt_name=$(udevadm info -ap /sys/devices/soc0 | awk '(/machine/)&&(gsub(/\"/,""))&&($0=tolower($NF))')
+
+# Use the DTBN if the 1-st parameter is not provided.
+name=${1:-${fdt_name}}
+
+# Get the eeprom value provided by the board bootloader.
+eval $(fw_printenv board)
+
+# Compare the parameter provided and the bootloader names
+# Return true if equal and false overwise
+[[ ${name} = ${board:-""} ]]
