@@ -6,7 +6,7 @@
 bash <(curl -L https://raw.githubusercontent.com/compulab-yokneam/bin/refs/heads/compulab-firmware/run.me)
 
 ## Update firmware
-### Prepare flashing setup:
+### Prepare flashing setup
 * Turn off the device.
 ** [for iot devices]
    Connect a USB~micto usb cable to the device programming port (micro-end) and the USB-A to a desktop PC usb port.
@@ -28,6 +28,7 @@ sudo uuu -lsusb
 [source,code]
 sudo uuu -d -v -b emmc /tmp/flash.bin
 
+### After flash verification
 * Turn off the device.
 * Disconnect the cable connected to the device programming port.
 * Turn on the device.
