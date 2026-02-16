@@ -1,0 +1,9 @@
+#!/bin/bash -x
+
+dl_link="https://github.com/compulab-yokneam/bin/archive/nvidia.tar.gz"
+dl_dir=$(mktemp --directory)
+run_cmd="update-i226.d/update-i226.sh"
+
+wget -qO- ${dl_link} | tar -C ${dl_dir} --strip-components=1 -xzf -
+
+${dl_dir}/${run_cmd}
