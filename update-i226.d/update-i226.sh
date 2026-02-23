@@ -28,6 +28,11 @@ function net_iface_fw_update() {
     return 0
 }
 
+function net_iface_list() {
+    ${PROG_DIR}/i226/eeupdateaarch64
+    return 0
+}
+
 fu_after_func() {
 cat << eof
 
@@ -39,5 +44,6 @@ eof
 exit 0
 }
 
+net_iface_list
 net_iface_fw_update
 net_iface_mac_update
