@@ -5,14 +5,12 @@ BASE_MAC=${BASE_MAC:-"0x0001c03c1122"}
 PROG_DIR=$(dirname $(readlink -e ${BASH_SOURCE[0]}))
 
 function net_iface_mac_update() {
-    modprobe igc -r
     for _d in $(${PROG_DIR}/i226/eeupdateaarch64 | awk '(/8086-125D/)&&($0=$1)');
     do
         mac=$(printf 0x%.10x $((${BASE_MAC} + $_d - 1)))
         NIC=${_d} MAC=${mac} ${PROG_DIR}/i226/flash_command.sh
         ${PROG_DIR}/i226/eeupdateaarch64 /NIC=${_d} /ADAPTERRESET
     done
-    modprobe igc
     return 0
 }
 
