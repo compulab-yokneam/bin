@@ -11,7 +11,7 @@ md5sum u-boot.pad
 c8431e228a559fe9c3810d387cf7b178  u-boot.pad
 ```
 
-* The update procedure:
+* Issue the u-boot update procedure:
 ```
 setenv firmware_file u-boot.pad
 setenv ubootsize 0xa8000
