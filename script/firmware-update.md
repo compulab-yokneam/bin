@@ -1,6 +1,17 @@
 # cl-som-imx7 u-boot update procedure
 
-* From tftp server
+* Download the firmware file to the tftp export folder:
+```
+cd /path/to/tftp-export
+wget -O - https://github.com/compulab-yokneam/bin/raw/refs/heads/cl-som-imx7/firmware/u-boot.pad.bz2 | bzip2 -dc | sudo tee u-boot.pad >/dev/null
+```
+* Issue md5sum validation:
+```
+md5sum u-boot.pad
+c8431e228a559fe9c3810d387cf7b178  u-boot.pad
+```
+
+* The update procedure:
 ```
 setenv firmware_file u-boot.pad
 setenv ubootsize 0xa8000
