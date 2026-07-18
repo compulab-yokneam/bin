@@ -1,3 +1,8 @@
+# Run the script. If it exits with 0, proceed. If not, jump to the end label.
+PROGRAM!="/opt/iotdin-imx8p/shell/iotdin_id.sh", GOTO="skip_device_rules"
+#
 SUBSYSTEM=="net", ACTION=="add", DEVPATH=="/devices/platform/soc@0/30800000.bus*/30830000.spi/spi_master/spi?/spi?.0/net/can?", NAME="canIFM_0"
 SUBSYSTEM=="net", ACTION=="add", DEVPATH=="/devices/platform/soc@0/30800000.bus*/30830000.spi/spi_master/spi?/spi?.1/net/can?", NAME="canIFM_1"
 
+# End label
+LABEL="skip_device_rules"
