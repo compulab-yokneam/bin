@@ -1,3 +1,6 @@
+# Run the script. If it exits with 0, proceed. If not, jump to the end label.
+PROGRAM!="/opt/iot-gate-imx8plus/shell/iotg_id.sh", GOTO="skip_device_rules"
+
 SUBSYSTEM=="tty", KERNELS=="30860000.serial", DRIVERS=="imx-uart", SYMLINK+="ttyIEA"
 SUBSYSTEM=="tty", KERNELS=="30880000.serial", DRIVERS=="imx-uart", SYMLINK+="ttyIEB"
 SUBSYSTEM=="tty", KERNELS=="30a60000.serial", DRIVERS=="imx-uart", SYMLINK+="ttyIEC"
@@ -6,3 +9,6 @@ SUBSYSTEM=="tty", KERNELS=="30a60000.serial", DRIVERS=="imx-uart", SYMLINK+="tty
 SUBSYSTEM=="tty", ACTION=="add", DRIVERS=="cp210x", DEVPATH=="/devices/platform/soc@0/32f10108.usb/38200000.usb/xhci-hcd.2.auto/usb3/3-1/3-1.2/3-1.2:1.0/ttyUSB*", SYMLINK+="ttyIEX"
 # IE-M2M2 with MESH NORDIC
 SUBSYSTEM=="tty", ACTION=="add", DRIVERS=="cdc_acm", DEVPATH=="/devices/platform/soc@0/32f10108.usb/38200000.usb/xhci-hcd.2.auto/usb3/3-1/3-1.2/3-1.2:1.0/tty/ttyACM*", SYMLINK+="ttyIEX"
+
+# End label
+LABEL="skip_device_rules"

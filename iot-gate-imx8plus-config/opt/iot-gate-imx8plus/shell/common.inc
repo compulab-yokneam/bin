@@ -1,6 +1,8 @@
 function get_device() {
-	[[ -d /sys/devices/soc0 ]] && device=$(udevadm info -ap /sys/devices/soc0 | awk -F"\"" '(/machine/)&&($0=$2)' | cut -d" " -f2 | tr '[:upper:]' '[:lower:]') || device=iot-gate-imx8plus
-	echo ${device}
+    local board_name="/proc/device-tree/som.info/board.name"
+    local device=$( [[ -f ${board_name} ]] && cat ${board_name} )
+    device=${device:-"iot-gate-imx8plus"}
+    echo ${device}
 }
 
 [[ -z "${IOTG}" ]] && export IOTG=$(get_device)
@@ -14,3 +16,8 @@ export DUMMY_PATH=/dev/null
 export I2C_BUS=/sys/bus/i2c/devices
 export IIO_BUS=/sys/bus/iio/devices
 export USB_BUS=/sys/bus/usb/devices
+
+DEV_ID="/opt/iot-gate-imx8plus/shell/iotg_id.sh"
+
+# Full stop if the device id is incorrect
+${DEV_ID} || exit 0
