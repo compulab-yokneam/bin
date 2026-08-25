@@ -27,3 +27,11 @@ eeprom-util write fields 1 0x50 "1st MAC Address=ca:fe:ca:ca:be:de"
 eeprom-util write fields 1 0x50 "2nd MAC Address=ca:fe:ca:ca:be:da"
 eeprom-util read 1 0x50
 ```
+
+* EdgeAI-ORN example:
+
+```
+sudo -i
+eeprom-util read 7 0x50
+eeprom-util read 7 0x51
+```
