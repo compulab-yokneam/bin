@@ -1,0 +1,2 @@
+. ${IOTG_LIB_HOME}/${IOTG}/iotg-config.inc
+. ${IOTG_LIB_HOME}/lib/lib_sio

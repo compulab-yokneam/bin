@@ -1,0 +1,384 @@
+CONFIG_DEV_CHANGE=0
+ASK_TO_REBOOT=0
+
+[[ -z ${IOTG_LIB_HOME} ]] && export IOTG_LIB_HOME=$(dirname $(readlink -e ${BASH_SOURCE[0]}))
+. ${IOTG_LIB_HOME}/common.inc
+. ${IOTG_LIB_HOME}/${IOTG}/stack_lib.sh
+. ${IOTG_LIB_HOME}/lib/lib_sio.inc
+
+# CONFIG modification stuff - taken from raspi-config
+
+################################################################
+# set_config_var() - set a new value for a variable in a configuration file
+# The file is expected to contain lines in the form:
+#   <key>=<value>
+# A line starting with '#' is assumed to be a comment
+# @key - variable to set
+# @value - new value to assign
+# @file - configuration file to modify
+################################################################
+set_config_var() {
+  awk -v key="$1" -v value="$2" '
+    $0 ~ "^#?[[:space:]]*" key "=" {
+      print key "=" value
+      made_change=1
+      next
+    }
+    { print }
+    END { if (!made_change) print key "=" value }
+  ' "$3" > "$3.bak" && mv "$3.bak" "$3"
+}
+
+################################################################
+# clear_config_var() - clear (comment out) a variable in a configuration file
+# @key - variable to clear
+# @file - configuration file to modify
+################################################################
+clear_config_var() {
+  sed -i "s/^\([[:space:]]*$1=\)/#\1/" "$2"
+}
+
+UNRECOGNIZED_ERR="Programmer error: unrecognized option"
+RUNNING_ERR="There was an error running option"
+
+#############################################################################
+calc_wt_size() { # Taken from raspi-config
+	# NOTE: it's tempting to redirect stderr to /dev/null, so supress error 
+	# output from tput. However in this case, tput detects neither stdout or 
+	# stderr is a tty and so only gives default 80, 24 values
+	WT_HEIGHT=18
+	WT_WIDTH=$(tput cols)
+
+	if [ -z "$WT_WIDTH" ] || [ "$WT_WIDTH" -lt 60 ]; then
+		WT_WIDTH=80
+	fi
+	if [ "$WT_WIDTH" -gt 178 ]; then
+		WT_WIDTH=120
+	fi
+	WT_MENU_HEIGHT=$((WT_HEIGHT - 7))
+}
+
+
+#############################################################################
+# Ask for reboot if required
+#############################################################################
+do_finish() {
+	if [ $ASK_TO_REBOOT -eq 1 ]; then
+		whiptail --yesno "\
+		NOTE: ANY CHANGES WILL TAKE EFFECT ONLY AFTER REBOOT.
+
+		Would you like to reboot now?" 10 70 2
+		if [ $? -eq 0 ]; then # yes
+			sync
+			reboot
+		fi
+	fi
+	exit 0
+}
+
+#############################################################################
+# Exit w/o saving
+#############################################################################
+do_exit_nosave() {
+	whiptail --yesno "Would you like to exit without applying changes?" --yes-button Exit --no-button Back --defaultno 16 60 2
+	RET=$?
+	if [ $RET -eq 0 ]; then
+		ASK_TO_REBOOT=0
+		do_finish
+	fi	
+}
+
+#############################################################################
+# Apply configuration and exit
+#############################################################################
+do_exit_save() {
+	whiptail --yesno "Would you like to apply changes and exit?" --yes-button "Save & Exit" --no-button Back 16 60 2
+	RET=$?
+	if [ $RET -eq 0 ]; then
+#		[[ "${IE_CONFIG[*]}" == "${IE_DETECTED[*]}" ]]
+		# Apply new configuration
+		do_apply_config
+		# Reboot
+		do_finish
+	fi
+}
+
+#############################################################################
+# Display current Industrial I/O Stack configuration
+#############################################################################
+do_ie_show () {
+	# Detect
+	stack_probe_silent
+	# Show
+	whiptail --title "Industrial I/O Stack: running configuration" --msgbox "\
+	Slot A:  [${IE_DETECTED[0]}] - ${CFG_DSCR[${IE_DETECTED[0]}]}
+
+
+	Slot B:  [${IE_DETECTED[1]}] - ${CFG_DSCR[${IE_DETECTED[1]}]}
+
+
+	Slot C:  [${IE_DETECTED[2]}] - ${CFG_DSCR[${IE_DETECTED[2]}]}
+
+	         IN OUT
+	   D0    [${DIO_VALUE_PRINT[${DI_CMAP[0]}]}][${DIO_VALUE_PRINT[${DO_CMAP[0]}]}]
+	   D1    [${DIO_VALUE_PRINT[${DI_CMAP[1]}]}][${DIO_VALUE_PRINT[${DO_CMAP[1]}]}]
+	   D2    [${DIO_VALUE_PRINT[${DI_CMAP[2]}]}][${DIO_VALUE_PRINT[${DO_CMAP[2]}]}]
+	   D3    [${DIO_VALUE_PRINT[${DI_CMAP[3]}]}][${DIO_VALUE_PRINT[${DO_CMAP[3]}]}]
+	" 20 70 1
+
+	return 0
+}
+
+#############################################################################
+# Display user defined I/O stack configuration
+#############################################################################
+do_ie_config_show () {
+	# Show
+	whiptail --title "Industrial I/O Stack: user configuration" --msgbox "\
+	Slot A:  [${IE_CONFIG[0]}] - ${CFG_DSCR[${IE_CONFIG[0]}]}
+
+
+	Slot B:  [${IE_CONFIG[1]}] - ${CFG_DSCR[${IE_CONFIG[1]}]}
+
+
+	Slot C:  [${IE_CONFIG[2]}] - ${CFG_DSCR[${IE_CONFIG[2]}]}
+
+	         IN OUT
+	   D0    [${DIO_VALUE_PRINT[${DI_UMAP[0]}]}][${DIO_VALUE_PRINT[${DO_UMAP[0]}]}]
+	   D1    [${DIO_VALUE_PRINT[${DI_UMAP[1]}]}][${DIO_VALUE_PRINT[${DO_UMAP[1]}]}]
+	   D2    [${DIO_VALUE_PRINT[${DI_UMAP[2]}]}][${DIO_VALUE_PRINT[${DO_UMAP[2]}]}]
+	   D3    [${DIO_VALUE_PRINT[${DI_UMAP[3]}]}][${DIO_VALUE_PRINT[${DO_UMAP[3]}]}]
+	" 20 70 1
+	return 0
+}
+
+declare -A CFG_DSCR=(
+		[${IE_CAN}]="CAN FD interface"
+		[${IE_RS485}]="RS-485 interface (half-duplex)"
+		[${IE_DIO}]="4x Digital Signals (inputs or outputs)"
+		[${IE_TYPE_ND}]="No interface is enabled"
+		[${D_IN}]="Read-only access enabled"
+		[${D_OUT}]="Write-only access enabled"
+)
+
+#############################################################################
+# I/O module configuration menu
+#############################################################################
+do_ie_config_serial () {
+	local slot_idx=${1:-}
+	[[ ! -z ${slot_idx} ]] || return 1
+	[[ ${slot_idx} -ge ${BIDX} ]] && [[ ${slot_idx} -le ${EIDX} ]] || return 1
+	declare -A slot_cfg=(
+		[${IE_CAN}]=OFF
+		[${IE_RS485}]=OFF
+		[${IE_TYPE_ND}]=OFF
+		)
+	local curr_cfg=${IE_CONFIG[${slot_idx}]}
+	slot_cfg["${curr_cfg}"]=ON
+	new_conf=$(whiptail --title "Industrial I/O Slot ${STACK_SLOTS[${slot_idx}]}" --separate-output --radiolist "" 16 80 4 \
+	"${IE_CAN}" "${CFG_DSCR["${IE_CAN}"]}" ${slot_cfg["${IE_CAN}"]} \
+	"${IE_RS485}" "${CFG_DSCR["${IE_RS485}"]}" ${slot_cfg["${IE_RS485}"]} \
+	"${IE_TYPE_ND}" "${CFG_DSCR["${IE_TYPE_ND}"]}" ${slot_cfg["${IE_TYPE_ND}"]} \
+	3>&1 1>&2 2>&3)
+	RET=$?
+	if [ ${RET} -eq 1 ] || [ ${RET} -eq 255 ]; then
+		return 0
+	fi
+
+	# Set slot new value
+	IE_CONFIG[${slot_idx}]=${new_conf}
+}
+
+do_dio_pin_config () {
+	local dio_idx=${1:-}
+	[[ ! -z ${dio_idx} ]] || return 1
+	[[ ${dio_idx} -ge ${BDIO} ]] && [[ ${dio_idx} -le ${EDIO} ]] || return 1
+	declare -A dio_cfg=(
+		[${D_IN}]=OFF
+		[${D_OUT}]=OFF
+		)
+	[[ ${DI_UMAP[${dio_idx}]} -eq ${DIO_VAL} ]] && dio_cfg["${D_IN}"]=ON
+	[[ ${DO_UMAP[${dio_idx}]} -eq ${DIO_VAL} ]] && dio_cfg["${D_OUT}"]=ON	
+	new_conf=$(whiptail --title "Digital Signal ${dio_idx}" --separate-output --radiolist "" 16 80 3 \
+	"${D_IN}" "${CFG_DSCR["${D_IN}"]}" ${dio_cfg["${D_IN}"]} \
+	"${D_OUT}" "${CFG_DSCR["${D_OUT}"]}" ${dio_cfg["${D_OUT}"]} \
+	3>&1 1>&2 2>&3)
+	RET=$?
+	if [ ${RET} -eq 1 ] || [ ${RET} -eq 255 ]; then
+		return 0
+	fi
+
+	# Set slot new value
+	case ${new_conf} in
+	"${D_IN}")
+		DI_UMAP[${dio_idx}]=${DIO_VAL}
+		DO_UMAP[${dio_idx}]=${DIO_INV}
+		;;
+	"${D_OUT}")
+		DI_UMAP[${dio_idx}]=${DIO_INV}
+		DO_UMAP[${dio_idx}]=${DIO_VAL}
+		;;
+	*)
+		return 1
+		;;
+	esac
+}
+
+do_dio_menu () {
+	while true; do
+		FUN=$(whiptail --title "Digital I/O (${IE_DIO}) Options" --menu "" $WT_HEIGHT $WT_WIDTH $WT_MENU_HEIGHT --cancel-button Back --ok-button Select \
+		"P0 D0         " "Configure Digital Signal 0" \
+		"P1 D1         " "Configure Digital Signal 1" \
+		"P2 D2         " "Configure Digital Signal 2" \
+		"P3 D3         " "Configure Digital Signal 3" \
+		3>&1 1>&2 2>&3)
+		RET=$?
+		if [ $RET -eq 1 ]; then
+			return 0
+		elif [ $RET -eq 0 ]; then
+			case "$FUN" in
+			P0\ *) do_dio_pin_config 0 ;;
+			P1\ *) do_dio_pin_config 1 ;;
+			P2\ *) do_dio_pin_config 2 ;;
+			P3\ *) do_dio_pin_config 3 ;;
+			*) whiptail --msgbox "${UNRECOGNIZED_ERR}" 20 60 1 ;;
+			esac || whiptail --msgbox "${RUNNING_ERR} $FUN" 20 60 1
+		fi
+	done
+}
+
+do_ie_config_dio () {
+	local slot_idx=${1:-}
+	[[ ! -z ${slot_idx} ]] || return 1
+	[[ ${slot_idx} -eq ${STACK_SLOTS2IDX[${IE_DIO_SLOT}]} ]] || return 1
+	declare -A slot_cfg=(
+		["${IE_DIO}"]=ON
+		)
+	new_conf=$(whiptail --title "Industrial I/O Slot ${STACK_SLOTS[${slot_idx}]}" --separate-output --radiolist "" 16 80 2 \
+	"${IE_DIO}" "${CFG_DSCR[${IE_DIO}]}" ${slot_cfg[${IE_DIO}]} \
+	3>&1 1>&2 2>&3)
+	RET=$?
+	if [ ${RET} -eq 1 ] || [ ${RET} -eq 255 ]; then
+		return 0
+	fi
+
+	# Set slot new value
+	IE_CONFIG[${slot_idx}]=${new_conf}
+	do_dio_menu
+}
+
+#############################################################################
+# Slots configuration menu
+#############################################################################
+do_slots_menu () {
+	while true; do
+		FUN=$(whiptail --title "Industrial I/O Slots Options" --menu "" $WT_HEIGHT $WT_WIDTH $WT_MENU_HEIGHT --cancel-button Back --ok-button Select \
+		"C1 Slot A        " "Configure Industrial I/O interface for slot A" \
+		"C2 Slot B        " "Configure Industrial I/O interface for slot B" \
+		"C3 Slot C        " "Configure Industrial I/O interface for slot C" \
+		3>&1 1>&2 2>&3)
+		RET=$?
+		if [ $RET -eq 1 ]; then
+			return 0
+		elif [ $RET -eq 0 ]; then
+			case "$FUN" in
+			C1\ *) do_ie_config_serial 0 ;;
+			C2\ *) do_ie_config_serial 1 ;;
+			C3\ *) do_ie_config_dio 2 ;;
+			*) whiptail --msgbox "${UNRECOGNIZED_ERR}" 20 60 1 ;;
+			esac || whiptail --msgbox "${RUNNING_ERR} $FUN" 20 60 1
+		fi
+	done
+}
+
+#############################################################################
+# Show configuration menu
+#############################################################################
+do_slots_show_menu () {
+	while true; do
+		FUN=$(whiptail --title "Show Industrial I/O Stack Configuration" --menu "" $WT_HEIGHT $WT_WIDTH $WT_MENU_HEIGHT --cancel-button Back --ok-button Select \
+		"S1 Show User Configured         " "Show user defined configuration" \
+		"S2 Show Current Configuration   " "Show currently run configuration" \
+		3>&1 1>&2 2>&3)
+		RET=$?
+		if [ $RET -eq 1 ]; then
+			return 0
+		elif [ $RET -eq 0 ]; then
+			case "$FUN" in
+			S1\ *) do_ie_config_show ;;
+			S2\ *) do_ie_show ;;
+			*) whiptail --msgbox "${UNRECOGNIZED_ERR}" 20 60 1 ;;
+			esac || whiptail --msgbox "${RUNNING_ERR} $FUN" 20 60 1
+		fi
+	done
+}
+
+#############################################################################
+# I/O modules menu
+#############################################################################
+do_stack_menu () {
+	while true; do
+		FUN=$(whiptail --title "Industrial I/O Stack Options" --menu "" $WT_HEIGHT $WT_WIDTH $WT_MENU_HEIGHT --cancel-button Back --ok-button Select \
+		"I1 Show         " "Show Industrial I/O Stack Configuration" \
+		"I2 Configure    " "Configure Industrial I/O Stack" \
+		3>&1 1>&2 2>&3)
+		RET=$?
+		if [ $RET -eq 1 ]; then
+			return 0
+		elif [ $RET -eq 0 ]; then
+			case "$FUN" in
+			I1\ *) do_slots_show_menu ;;
+			I2\ *) do_slots_menu ;;
+			*) whiptail --msgbox "${UNRECOGNIZED_ERR}" 20 60 1 ;;
+			esac || whiptail --msgbox "${RUNNING_ERR} $FUN" 20 60 1
+		fi
+	done
+}
+
+
+# Main routine
+## Check user ID
+if [[ $(id -u) -ne 0 ]] ; then
+	printf "Please run as root: 'sudo ${BASH_SOURCE[0]}'\n";
+	exit 1
+fi
+
+## Check if -quiet flag is arrised
+flag=${1:-"-dialog"}
+if [[ "${flag}" == "-quiet" ]]; then
+	#
+	do_apply_config
+	exit 0
+fi
+
+## Calculate terminal size
+calc_wt_size
+## Probe all stack slots
+stack_probe_silent
+IE_CONFIG=("${IE_DETECTED[@]}")
+DI_UMAP=("${DI_CMAP[@]}")
+DO_UMAP=("${DO_CMAP[@]}")
+
+#############################################################################
+# Main menu
+#############################################################################
+while true; do
+	FUN=$(whiptail --title "${IOTG^^} Configuration Tool" --menu "Setup Options" $WT_HEIGHT $WT_WIDTH $WT_MENU_HEIGHT \
+	"1 Industrial I/O Stack    " "Industrial I/O Stack options" \
+	"2 Save Changes and Exit" "Apply changes and exit" \
+	"3 Discard Changes and Exit" "Exit discarding changes" \
+	3>&1 1>&2 2>&3)
+	RET=$?
+	if [ $RET -eq 1 ]; then
+		do_exit_nosave
+    elif [ $RET -eq 0 ]; then
+		case "$FUN" in
+		1\ *) do_stack_menu ;;
+		2\ *) do_exit_save ;;
+		3\ *) do_exit_nosave ;;
+		*) whiptail --msgbox "${UNRECOGNIZED_ERR}" 20 60 1 ;;
+		esac || whiptail --msgbox "${RUNNING_ERR} $FUN" 20 60 1
+	else
+		exit 1
+	fi
+ done

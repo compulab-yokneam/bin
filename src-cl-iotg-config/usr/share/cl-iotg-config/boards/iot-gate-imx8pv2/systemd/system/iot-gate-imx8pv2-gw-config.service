@@ -1,0 +1,12 @@
+[Unit]
+Description=Configure IOT-GATE-IMX8PV2 Gateway
+After=serial-getty@.service
+
+[Service]
+Type=oneshot
+ExecStart=/opt/cl-iotg/shell/gw.sh "config" "1"
+Restart=on-failure
+RestartSec=15
+
+[Install]
+WantedBy=multi-user.target

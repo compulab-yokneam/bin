@@ -1,0 +1,9 @@
+Package: cl-iotg-config
+Version: 1.0.0
+Section: utils
+Priority: optional
+Architecture: all
+Maintainer: Ilya Ledvich <ilya@compulab.co.il>
+Depends: bash, coreutils, evtest, gpiod, libubootenv-tool, tree, systemd, udev, whiptail
+Description: C-Lab IOT Gateway Configuration Suite
+ Configuration and management suite providing support for C-Lab IOT Gateway peripherals and Industrial I/O interfaces.

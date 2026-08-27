@@ -1,0 +1,11 @@
+[Unit]
+Description=Setup C-LAB IOT-GATE Configuration Suite
+DefaultDependencies=no
+
+[Service]
+Type=oneshot
+ExecStart=/opt/cl-iotg/shell/cl-iotg-config-setup.sh
+Restart=no
+
+[Install]
+WantedBy=sysinit.target

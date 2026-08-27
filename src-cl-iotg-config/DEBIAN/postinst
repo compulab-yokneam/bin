@@ -1,0 +1,16 @@
+#!/bin/bash
+set -e
+
+echo "Configuring C-Lab IOT Gateway suite..."
+
+# 1. Enable systemd services
+echo "Enabling systemd services..."
+systemctl daemon-reload
+systemctl enable cl-iotg-config-setup.service
+
+# Run the service only on the "live" system (skip if the build is in chroot)
+if [ -z "${DPKG_ROOT}" ]; then
+    systemctl restart cl-iotg-config-setup.service || true
+fi
+
+exit 0

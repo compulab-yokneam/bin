@@ -1,0 +1,10 @@
+#!/bin/bash
+set -e
+
+echo "Removing C-Lab IOT Gateway suite..."
+
+# 1. Disable/stop services
+systemctl disable cl-iotg-config-setup.service || true
+systemctl stop cl-iotg-config-setup.service || true
+
+exit 0

@@ -1,0 +1,9 @@
+#!/bin/bash
+
+[[ -z ${IOTG_LIB_HOME} ]] && export IOTG_LIB_HOME=$(dirname $(readlink -e ${BASH_SOURCE[0]}))
+# Include
+## Common lib
+. ${IOTG_LIB_HOME}/common.inc
+
+[[ -e ${IOTG_LIB_HOME}/${IOTG}/iotg-config ]] || exit 0
+. ${IOTG_LIB_HOME}/${IOTG}/iotg-config
