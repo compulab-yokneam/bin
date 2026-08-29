@@ -1,0 +1,14 @@
+[Unit]
+Description=Initialize hostname aliases
+Requires=etc-hostname.mount
+After=etc-hostname.mount
+After=local-fs.target
+Before=multi-user.target
+
+[Service]
+Type=oneshot
+ExecStart=/bin/sh -c 'echo "$(cat /etc/hostname) localhost" > /run/hosts'
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

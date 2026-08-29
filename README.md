@@ -1,1 +1,1 @@
-# bin
+# update-hosts
