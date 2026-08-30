@@ -1,13 +1,12 @@
 [Unit]
 Description=Initialize hostname aliases
-Requires=etc-hostname.mount
-After=etc-hostname.mount
 After=local-fs.target
 Before=multi-user.target
+ConditionPathExists=/etc/hostname
 
 [Service]
 Type=oneshot
-ExecStart=/bin/sh -c 'echo "$(cat /etc/hostname) localhost" > /run/hosts'
+ExecStart=/usr/local/bin/update-hosts.sh
 RemainAfterExit=yes
 
 [Install]
