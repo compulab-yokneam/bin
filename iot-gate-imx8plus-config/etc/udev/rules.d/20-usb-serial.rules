@@ -1,4 +1,7 @@
 # Run the script. If it exits with 0, proceed. If not, jump to the end label.
+ACTION!="add", GOTO="skip_device_rules"
+SUBSYSTEM!="usb-serial", GOTO="skip_device_rules"
+
 PROGRAM!="/opt/iot-gate-imx8plus/shell/iotg_id.sh", GOTO="skip_device_rules"
 
 # IE-M2M2 with MESH SILAB

@@ -1,4 +1,7 @@
 # Run the script. If it exits with 0, proceed. If not, jump to the end label.
+KERNEL!="can*", GOTO="skip_device_rules"
+ACTION!="add", GOTO="skip_device_rules"
+SUBSYSTEM!="net", GOTO="skip_device_rules"
 PROGRAM!="/opt/iot-gate-imx8plus/shell/iotg_id.sh", GOTO="skip_device_rules"
 
 SUBSYSTEM=="net", ACTION=="add", DEVPATH=="/devices/platform/soc@0/30800000.bus/308c0000.can/net/can?", NAME="canC"
