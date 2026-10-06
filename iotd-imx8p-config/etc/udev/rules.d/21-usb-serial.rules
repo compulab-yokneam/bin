@@ -1,4 +1,8 @@
 # Run the script. If it exits with 0, proceed. If not, jump to the end label.
+KERNEL!="ttyUSB*", GOTO="skip_device_rules"
+ACTION!="add", GOTO="skip_device_rules"
+SUBSYSTEM!="usb-serial", GOTO="skip_device_rules"
+
 PROGRAM!="/opt/iotdin-imx8p/shell/iotdin_id.sh", GOTO="skip_device_rules"
 #
 # IFM-RSxxx-0
