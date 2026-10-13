@@ -29,8 +29,8 @@ declare -A CAN_DEV_HOME=(
 ### DIO
 declare -a CHIP_O=(5 5 5 5)
 declare -a PIN_O=(4 5 6 7)
-declare -a CHIP_I=(2 2 1 1)
-declare -a PIN_I=(19 20 20 10)
+declare -a CHIP_I=(2 2 2 1)
+declare -a PIN_I=(19 20 21 10)
 
 ## Configuration
 export CONFIG_HOME=/run/${IOTG}/config
