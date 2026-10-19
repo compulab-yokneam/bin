@@ -33,12 +33,15 @@ declare -a CHIP_I=(2 2 2 1)
 declare -a PIN_I=(19 20 21 10)
 
 ## Configuration
-export CONFIG_HOME=/run/${IOTG}/config
-export CONFIG_SRC_HOME=${BOARDS_HOME}/${IOTG}/config
-export CL_CONFIG_FILE=cl-config.txt
-export CL_CONFIG=${CONFIG_HOME}/${CL_CONFIG_FILE}
-export CL_CONFIG_NEXT=${CONFIG_SRC_HOME}/${CL_CONFIG_FILE}
-export CL_CONFIG_TMPL=${CONFIG_SRC_HOME}/cl-config.tmpl
-export CL_CONFIG_BAK=${CL_CONFIG}.prev
+export CONFIG_STK_HOME=/run/${IOTG}/config
+export CONFIG_STK_SRC_HOME=${BOARDS_HOME}/${IOTG}/config
+
+### Stack config
+export CL_CONFIG_STK_PTRN=cl-config.stack
+export CL_CONFIG_STK_FILE=${CL_CONFIG_STK_PTRN}.txt
+export CL_CONFIG_STK=${CONFIG_STK_HOME}/${CL_CONFIG_STK_FILE}
+export CL_CONFIG_STK_NEXT=${CONFIG_STK_SRC_HOME}/${CL_CONFIG_STK_FILE}
+export CL_CONFIG_STK_TMPL=${CONFIG_STK_SRC_HOME}/${CL_CONFIG_STK_PTRN}.tmpl
+export CL_CONFIG_STK_BAK=${CL_CONFIG_STK}.prev
 export IE_SLOT_CFG="ie_"
-export NEW_CL_CONFIG=$(mktemp --dry-run -p /tmp cl_config.XXX)
+export NEW_CL_CONFIG_STK=$(mktemp --dry-run -p /tmp ${CL_CONFIG_STK_PTRN}.XXX)

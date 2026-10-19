@@ -70,3 +70,60 @@ function gw_get_blkdev_name() {
 			;;
 	esac
 }
+
+## Configuration
+export CONFIG_GW_HOME=/run/${IOTG}/config
+export CONFIG_GW_SRC_HOME=${BOARDS_HOME}/${IOTG}/config
+
+### Gateway config
+export CL_CONFIG_GW_PTRN=cl-config.gw
+export CL_CONFIG_GW_FILE=${CL_CONFIG_GW_PTRN}.txt
+export CL_CONFIG_GW=${CONFIG_GW_HOME}/${CL_CONFIG_GW_FILE}
+export CL_CONFIG_GW_NEXT=${CONFIG_GW_SRC_HOME}/${CL_CONFIG_GW_FILE}
+export CL_CONFIG_GW_TMPL=${CONFIG_GW_SRC_HOME}/${CL_CONFIG_GW_PTRN}.tmpl
+export CL_CONFIG_GW_BAK=${CL_CONFIG_GW}.prev
+export NEW_CL_CONFIG_GW=$(mktemp --dry-run -p /tmp ${CL_CONFIG_GW_PTRN}.XXX)
+
+function init_gw_config () {
+	local new_cfg=${1:-${CL_CONFIG_GW}}
+
+cat  << EOF > ${new_cfg}
+#### GW Peripherals
+# Enable Gateway peripherals by setting their value to "on".
+# Leave unset (or commented out) to disable.
+#
+# Supported peripherals, grouped by category:
+# - Display:
+# - PCIe:
+#   - wifi       - PCIe WiFi module (e.g. Intel AX210) (enabled by default)
+#   - nvme       - NVMe storage / Hailo AI accelerator
+# - Wireless connectivity:
+#   - wifi-sdio  - SDIO-based WiFi module (e.g. C-Lab EB-M2WIFI)
+# - Miscellaneous:
+#   - cmd        - CMD button
+#
+# Example: cmd=on    # <-- Enable the CMD button
+wifi=on
+#nvme=
+#wifi-sdio=
+#cmd=
+EOF
+}
+
+function do_init_gw() {
+	# Init GW config
+	mkdir -p ${CONFIG_GW_HOME}
+	## Check if cl-config.gw.txt if found
+	if [[ ! -e ${CL_CONFIG_GW} ]] ; then
+		if [[ -e ${CL_CONFIG_GW_NEXT} ]]; then
+			# Make a copy from the last good if exists
+			cp ${CL_CONFIG_GW_NEXT} ${CONFIG_GW_HOME}/
+		elif [[ -e ${CL_CONFIG_GW_TMPL} ]] ; then
+			# Make a copy from the template
+			cp ${CL_CONFIG_GW_TMPL} ${CL_CONFIG_GW}
+		else
+			# Generate from the scratch
+			init_gw_config ${CL_CONFIG_GW}
+		fi
+	fi
+}

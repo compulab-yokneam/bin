@@ -39,7 +39,7 @@ function detect_ie_type() {
 	local ie_type="${IE_TYPE_ND}"
 
 	# Extract the configuration line for the specific slot
-	local ie_cfg=$(grep -m 1 -i "^[[:space:]]*""${IE_SLOT_CFG}${slot,,}" "${CL_CONFIG}")
+	local ie_cfg=$(grep -m 1 -i "^[[:space:]]*""${IE_SLOT_CFG}${slot,,}" "${CL_CONFIG_STK}")
 	if [[ -n ${ie_cfg} ]] ; then
 		# Extract the 'type' (everything between '=' and the first ',' or end of line)
 		# Using sed to grab the string after '=' but before any ','
@@ -310,7 +310,7 @@ function do_config() {
 }
 
 function init_stack_config () {
-	local new_cfg=${1:-${CL_CONFIG}}
+	local new_cfg=${1:-${CL_CONFIG_STK}}
 
 cat  << EOF > ${new_cfg}
 #### I/O Slots A and B
@@ -335,18 +335,18 @@ EOF
 
 function do_init_stack() {
 	# Init stack config
-	mkdir -p ${CONFIG_HOME}
-	## Check if cl-config.txt if found
-	if [[ ! -e ${CL_CONFIG} ]] ; then
-		if [[ -e ${CL_CONFIG_NEXT} ]]; then
+	mkdir -p ${CONFIG_STK_HOME}
+	## Check if cl-config.stack.txt if found
+	if [[ ! -e ${CL_CONFIG_STK} ]] ; then
+		if [[ -e ${CL_CONFIG_STK_NEXT} ]]; then
 			# Make a copy from the last good if exists
-			cp ${CL_CONFIG_NEXT} ${CONFIG_HOME}/
-		elif [[ -e ${CL_CONFIG_TMPL} ]] ; then
+			cp ${CL_CONFIG_STK_NEXT} ${CONFIG_STK_HOME}/
+		elif [[ -e ${CL_CONFIG_STK_TMPL} ]] ; then
 			# Make a copy from the template
-			cp ${CL_CONFIG_TMPL} ${CL_CONFIG}
+			cp ${CL_CONFIG_STK_TMPL} ${CL_CONFIG_STK}
 		else
 			# Generate from the scratch
-			init_stack_config ${CL_CONFIG}
+			init_stack_config ${CL_CONFIG_STK}
 		fi
 	fi
 }
