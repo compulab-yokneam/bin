@@ -1,2 +1,6 @@
+# Device specific implementation of Peripherals and common staff
 . ${IOTG_LIB_HOME}/${IOTG}/iotg-config.inc
+# SIO implementation of I/O Stack
 . ${IOTG_LIB_HOME}/lib/lib_sio
+# Common lib_config
+. ${IOTG_LIB_HOME}/lib/lib_config

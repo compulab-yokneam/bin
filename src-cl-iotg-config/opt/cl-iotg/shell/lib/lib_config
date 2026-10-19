@@ -1,0 +1,169 @@
+ASK_TO_REBOOT=0
+
+[[ -z ${IOTG_LIB_HOME} ]] && export IOTG_LIB_HOME=$(dirname $(readlink -e ${BASH_SOURCE[0]}))
+. ${IOTG_LIB_HOME}/common.inc
+
+# CONFIG modification stuff - taken from raspi-config
+
+################################################################
+# set_config_var() - set a new value for a variable in a configuration file
+# The file is expected to contain lines in the form:
+#   <key>=<value>
+# A line starting with '#' is assumed to be a comment
+# @key - variable to set
+# @value - new value to assign
+# @file - configuration file to modify
+################################################################
+set_config_var() {
+  awk -v key="$1" -v value="$2" '
+    $0 ~ "^#?[[:space:]]*" key "=" {
+      print key "=" value
+      made_change=1
+      next
+    }
+    { print }
+    END { if (!made_change) print key "=" value }
+  ' "$3" > "$3.bak" && mv "$3.bak" "$3"
+}
+
+################################################################
+# clear_config_var() - clear (comment out) a variable in a configuration file
+# @key - variable to clear
+# @file - configuration file to modify
+################################################################
+clear_config_var() {
+  sed -i "s/^\([[:space:]]*$1=\)/#\1/" "$2"
+}
+
+UNRECOGNIZED_ERR="Programmer error: unrecognized option"
+RUNNING_ERR="There was an error running option"
+
+#############################################################################
+calc_wt_size() { # Taken from raspi-config
+	# NOTE: it's tempting to redirect stderr to /dev/null, so supress error 
+	# output from tput. However in this case, tput detects neither stdout or 
+	# stderr is a tty and so only gives default 80, 24 values
+	WT_HEIGHT=18
+	WT_WIDTH=$(tput cols)
+
+	if [ -z "$WT_WIDTH" ] || [ "$WT_WIDTH" -lt 60 ]; then
+		WT_WIDTH=80
+	fi
+	if [ "$WT_WIDTH" -gt 178 ]; then
+		WT_WIDTH=120
+	fi
+	WT_MENU_HEIGHT=$((WT_HEIGHT - 7))
+}
+
+#############################################################################
+# Ask for reboot if required
+#############################################################################
+do_finish() {
+	if [ ${ASK_TO_REBOOT} -eq 1 ]; then
+		whiptail --yesno "\
+		NOTE: ANY CHANGES WILL TAKE EFFECT ONLY AFTER REBOOT.
+
+		Would you like to reboot now?" 10 70 2
+		if [ $? -eq 0 ]; then # yes
+			sync
+			reboot
+		fi
+	fi
+	exit 0
+}
+
+#############################################################################
+# Exit w/o saving
+#############################################################################
+do_exit_nosave() {
+	whiptail --yesno "Would you like to exit without applying changes?" --yes-button Exit --no-button Back --defaultno 16 60 2
+	RET=$?
+	if [ $RET -eq 0 ]; then
+		ASK_TO_REBOOT=0
+		do_finish
+	fi	
+}
+
+#############################################################################
+# Apply configuration and exit
+#############################################################################
+do_exit_save() {
+	whiptail --yesno "Would you like to apply changes and exit?" --yes-button "Save & Exit" --no-button Back 16 60 2
+	RET=$?
+	if [ $RET -eq 0 ]; then
+		# Apply new configuration
+		do_apply_config
+		# Reboot
+		do_finish
+	fi
+}
+
+#############################################################################
+# I/O modules stubs
+#############################################################################
+declare -F do_slots_show_menu &>/dev/null || do_slots_show_menu() { :; }
+declare -F do_slots_menu &>/dev/null || do_slots_menu() { :; }
+
+#############################################################################
+# I/O modules menu
+#############################################################################
+do_stack_menu () {
+	while true; do
+		FUN=$(whiptail --title "Industrial I/O Stack Options" --menu "" $WT_HEIGHT $WT_WIDTH $WT_MENU_HEIGHT --cancel-button Back --ok-button Select \
+		"I1 Show         " "Show Industrial I/O Stack Configuration" \
+		"I2 Configure    " "Configure Industrial I/O Stack" \
+		3>&1 1>&2 2>&3)
+		RET=$?
+		if [ $RET -eq 1 ]; then
+			return 0
+		elif [ $RET -eq 0 ]; then
+			case "$FUN" in
+			I1\ *) do_slots_show_menu ;;
+			I2\ *) do_slots_menu ;;
+			*) whiptail --msgbox "${UNRECOGNIZED_ERR}" 20 60 1 ;;
+			esac || whiptail --msgbox "${RUNNING_ERR} $FUN" 20 60 1
+		fi
+	done
+}
+
+# Main routine
+## Check user ID
+if [[ $(id -u) -ne 0 ]] ; then
+	printf "Please run as root: 'sudo ${BASH_SOURCE[0]}'\n";
+	exit 1
+fi
+
+## Check if -quiet flag is arrised
+flag=${1:-"-dialog"}
+if [[ "${flag}" == "-quiet" ]]; then
+	#
+	do_apply_config
+	exit 0
+fi
+
+## Calculate terminal size
+calc_wt_size
+
+#############################################################################
+# Main menu
+#############################################################################
+while true; do
+	FUN=$(whiptail --title "${IOTG^^} Configuration Tool" --menu "Setup Options" $WT_HEIGHT $WT_WIDTH $WT_MENU_HEIGHT \
+	"1 Industrial I/O Stack    " "Industrial I/O Stack options" \
+	"2 Save Changes and Exit" "Apply changes and exit" \
+	"3 Discard Changes and Exit" "Exit discarding changes" \
+	3>&1 1>&2 2>&3)
+	RET=$?
+	if [ $RET -eq 1 ]; then
+		do_exit_nosave
+    elif [ $RET -eq 0 ]; then
+		case "$FUN" in
+		1\ *) do_stack_menu ;;
+		2\ *) do_exit_save ;;
+		3\ *) do_exit_nosave ;;
+		*) whiptail --msgbox "${UNRECOGNIZED_ERR}" 20 60 1 ;;
+		esac || whiptail --msgbox "${RUNNING_ERR} $FUN" 20 60 1
+	else
+		exit 1
+	fi
+ done
