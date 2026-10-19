@@ -95,6 +95,10 @@ function gw_grant_access() {
 	done
 }
 
+function gw_init() {
+	command -v do_init_gw &>/dev/null && (do_init_gw || true) || true
+}
+
 ### Main
 
 LOG_FILE_NAME=${LOG_FILE_NAME:-${LOGS_HOME}/${IOTG}.gw.log.$(date +${TIMESTAMP_FORMAT})}
@@ -106,16 +110,20 @@ param=${2:-}
 case ${opt} in
 	"config")
 		# Ad-hoc option for automated service
+		gw_init
 		gw_grant_access ${param} > ${LOG_FILE_NAME}
 		gw_info_frontplane "Gateway Access Info:" >> ${LOG_FILE_NAME}
 		;;
 	"info")
+		gw_init
 		gw_info_frontplane "Gateway Access Info:"
 		;;
 	"manage")
+		gw_init
 		gw_grant_access
 		;;
 	"source")
+		gw_init
 		# Dummy option - applied when file is sourced by external script for further usage
 		;;
 	*)
