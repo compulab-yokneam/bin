@@ -16,9 +16,29 @@ stop to disable all TX/trigger modes, and quit to leave. All commands and
 driver readbacks are recorded in rf-test.log next to the script.
 Choose another adapter with --config /proc/mwlan/adapter1/config.
 
-Before entering RF mode, disconnect Wi-Fi and stop the uAP BSS. SSH should use
-Ethernet. Normal Wi-Fi cannot operate in RF mode. Firmware reset is required
-after leaving RF mode; this console does not unload drivers or reset firmware.
+Before RF testing (run these commands as root on the DUT):
+
+Use Ethernet for SSH; normal Wi-Fi cannot operate in RF mode. Disconnect
+Wi-Fi and stop the uAP BSS before entering RF mode. If hostapd is running,
+stop it and remember to restore it after testing:
+    systemctl is-active hostapd
+    # Only if active:
+    systemctl stop hostapd
+
+Release all Wi-Fi interfaces from NetworkManager and bring them down:
+    for iface in wlan0 uap0 wfd0; do
+        nmcli device set "$iface" managed no
+        ip link set "$iface" down
+    done
+
+Check that all three interfaces are down:
+    ip -br link show wlan0
+    ip -br link show uap0
+    ip -br link show wfd0
+
+Start the console using one of the commands above, then enter
+rf_test_mode=1 at its prompt. These preparation commands do not affect
+the Ethernet interface used for SSH.
 
 Example session (issue each line at the rf-test> prompt):
     rf_test_mode=1
@@ -34,6 +54,27 @@ Example session (issue each line at the rf-test> prompt):
     get_and_reset_per
     rf_test_mode=0
     quit
+
+After RF testing:
+
+At the rf-test> prompt, stop transmission and leave RF mode:
+    stop
+    rf_test_mode=0
+    quit
+
+The firmware must be reset before normal Wi-Fi can resume. The console
+does not unload drivers or reset firmware. Rebooting the DUT performs the
+reset and disconnects SSH:
+    reboot
+
+Reconnect over Ethernet after the DUT boots. Restore NetworkManager
+control if needed (run as root on the DUT):
+    for iface in wlan0 uap0 wfd0; do
+        nmcli device set "$iface" managed yes
+    done
+
+If hostapd was active before testing and has not restarted after reboot:
+    systemctl start hostapd
 
 TX frame menu offers ax (22 arguments), legacy (15 arguments), or short
 (4 arguments, as used in the README trigger transmission example). Stop
