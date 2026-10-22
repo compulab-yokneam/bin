@@ -56,6 +56,6 @@ README example corrections:
 * The TX-frame examples have five-octet BSSIDs. Prompts require six octets.
 * he_tb_tx example power 10 exceeds the stated -11..9 dBm range; default is 9.
 
-Source: /home/val/devel/github/mwifiex/README, section 6,
+Source: https://github.com/nxp-imx/mwifiex/blob/lf-6.18.20_2.0.0/README, section 6,
 "FOR RF test mode commands:". RF_COMMANDS.txt is a verbatim copy of that
 chapter at installation time. No RF writes were made during installation.
