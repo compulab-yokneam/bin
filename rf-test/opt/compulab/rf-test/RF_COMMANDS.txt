@@ -1,0 +1,175 @@
+6) FOR RF test mode commands:
+
+    Following commands are used to perform RF testing of the wifi chipset.
+    Please not that these test mode commands can only be issued while the
+    device is in disconnected state and the uAP BSS is inactive.
+    Normal wifi operations cannot be used on entering RF Test Mode.
+
+    Enter RF Test Mode:
+	echo "rf_test_mode=1" > /proc/mwlan/adapterX/config
+
+    Exit RF Test Mode:
+	echo "rf_test_mode=0" > /proc/mwlan/adapterX/config
+    Please note that after exiting the RF Test Mode, the FW needs to be
+    reset in order to use normal wifi connectivity.
+
+    To get the set of available RF Test Mode commands, currently set
+    parameters values for each command and the output,
+	cat /proc/mwlan/adapterX/config
+
+  Set Radio Mode
+    echo "radio_mode=<radioMode0> <radioMode1>"
+
+    Example: 2.4G[1x1]
+    echo "radio_mode=11 0" > /proc/mwlan/adapterX/config
+    5G[1x1]
+    echo "radio_mode=3 0" > /proc/mwlan/adapterX/config
+
+    Set Tx Antenna
+	For 1x1 chipsets, 1:Main, 2:Aux when antenna diversity is supported
+	For 2x2 chipsets, 1:Path A, 2: Path B, 3: Path A+B
+			  Both Tx and Rx must be set to same antenna path
+	echo "tx_antenna=1" > /proc/mwlan/adapterX/config
+
+    Set Rx Antenna
+	For 1x1 chipsets, 1:Main, 2:Aux when antenna diversity is supported
+	For 2x2 chipsets, 1:Path A, 2:Path B, 3:Path A+B
+			  Both Tx and Rx must be set to same antenna path
+	echo "rx_antenna=1" > /proc/mwlan/adapterX/config
+
+    Set RF band  (0:2G, 1:5G)
+	For 2G, channel will be reset to 6, while for 5G, to channel 36
+	echo "band=0" > /proc/mwlan/adapterX/config
+
+    Set RF bandwidth  (0:20MHz, 1:40MHz, 4:80MHz)
+	echo "bw=0" > /proc/mwlan/adapterX/config
+
+    Set RF channel
+	echo "channel=6" > /proc/mwlan/adapterX/config
+
+    Get and reset packet error rate
+	echo "get_and_reset_per" > /proc/mwlan/adapterX/config
+
+    Set Tx Power
+	This command will set power only if caldata is already loaded in the FW.
+	Power       (-15 to 24 dBm)
+	Modulation  (0: CCK, 1:OFDM, 2:MCS)
+	Path ID     (0: PathA, 1:PathB, 2:PathA+B)
+	echo "tx_power=16 2 0" > /proc/mwlan/adapterX/config
+
+    Set MFG HE TB Tx to configure Trigger based TX reponse
+    Enable Tx   (0:disable, 1:enable)
+    Q num       (0-7 : TCQs 0-7, 17-20: AXQs 0-3)
+    AID         (Association ID as applicable)
+    AXQ MU Timer(to set the MU EDCA Timer for the Queue)
+    Tx Power    (-11 to 9 dBm)
+    echo "he_tb_tx=1 1 5 400 10" > /proc/mwlan/adapterX/config
+
+    Set Tx Continuous Mode
+	Start                 (0:disable, 1:enable)
+	Continuous Wave Mode  (0:disable, 1:enable)
+	Payload Pattern       (0 to 0xFFFFFFFF)
+	CS Mode               (Applicable only when continuous wave is disabled)
+	                      (0:disable, 1:enable)
+	Active SubChannel     (0:low, 1:upper, 3:both)
+	Tx Data Rate          (Rate Index corresponding to legacy/HT/VHT rates)
+
+	Example: To start continuous wave (tone) mode, first stop any ongoing
+	Tx and then start wave mode:
+	step1: echo "tx_continuous=0" > /proc/mwlan/adapterX/config
+	step2: echo "tx_continuous=1 1 0xAAA 0 3 7" > /proc/mwlan/adapterX/config
+
+	Example: To start continuous packet mode, first stop any ongoing Tx and
+	then start pkt mode:
+	step1: echo "tx_continuous=0" > /proc/mwlan/adapterX/config
+	step2: echo "tx_continuous=1 0 0xAAA 0 3 7" > /proc/mwlan/adapterX/config
+
+	stop:
+	echo "tx_continuous=0" > /proc/mwlan/adapterX/config
+
+    Set Tx Frame
+	Start                 (0:disable, 1:enable)
+	Tx Data Rate          (Rate Index corresponding to legacy/HT/VHT rates)
+	Payload Pattern       (0 to 0xFFFFFFFF)
+	Payload Length        (1 to 0x400)
+	Adjust Burst SIFS Gap (0:disable, 1:enable)
+	Burst SIFS in us      (0 to 255us)
+	Short Preamble        (0:disable, 1:enable)
+	Active SubChannel     (0:low, 1:upper, 3:both)
+	Short GI              (0:disable, 1:enable)
+	Adv Coding            (0:disable, 1:enable)
+	Beamforming           (0:disable, 1:enable)
+	GreenField Mode       (0:disable, 1:enable)
+	STBC                  (0:disable, 1:enable)
+	Signal Bw             (0: 20Mhz, 1: 40Mhz, 4:80Mhz, -1: Set to default)
+	NumPkt                (-1:Set to default value, 1 to 0xfffffffe to specify number of packaets to send)
+	MaxPktExt             (0|8|16us, -1:Set to default Value 2)
+	BeamChange            (0|1, -1:Set to default Value 1)
+	DCM                   (0|1, -1:Set to default Value 0)
+	Doppler               (0|1, -1:Set to default Value 0)
+	MidamblePeriod        (10|20, -1:Set to default Value 0)
+	QNum                  (0-12|17-20, -1:Set to default Value if 11ax QNum:17 else QNum:0)
+	BSSID                 (xx:xx:xx:xx:xx:xx)
+
+	Note: NumPkt, MaxPktExt, BeamChange,DCM , Doppler, MidamblePeriod and QNum are 11ax paramters
+
+	Example: To start Tx frame with duty cycle, first stop any ongoing Tx
+        and then start Tx frame:
+	echo "tx_frame=0" > /proc/mwlan/adapterX/config
+	For 11ax chips:
+	echo "tx_frame=1 7 0xAAA 0x100 1 20 0 0 0 0 0 0 0 0 -1 -1 -1 -1 -1 -1 -1 05:43:3f:c4:51" > /proc/mwlan/adapterX/config
+	For non-11ax chips:
+	echo "tx_frame=1 7 0xAAA 0x100 1 20 0 0 0 0 0 0 0 0 05:43:3f:c4:51" > /proc/mwlan/adapterX/config
+
+    Configure Trigger Frame
+    	Start                 	(0|1, 0:disable, 1:enable)
+    	standalone HETB			(0|1,  0:disable, 1:enable)
+		Frame Control Type		(1: Control frame)
+		Frame Control Sub-Type	(2: Trigger frame)
+		Duration				(0x156C , Max Duration time)
+		TriggerType				(0: Basic Trigger Frame)
+		UlLen					(UL Length)
+		MoreTF					(0|1, 0:FALSE, 1:TRUE)
+		CS Required				(0|1, 0:FALSE, 1:TRUE)
+		UL_bandwidth			(0: 20Mhz, 1: 40Mhz, 2:80Mhz, 3:80+80 MHz|160MHz -1:Set to default value)
+		LTF Type				(0: 1xLTF+1.6usGI, 1: 2xLTF+0.8usGI, 2: 2xLTF+1.6usGI, 3: 4xLTF+3.2usGI)
+		LTF Mode				(0|1, 0: Single stream pilots, 1: Mask LTF sequence of each spatial stream)
+		LTF symbol				(Number of LTF Symbols)
+		UL STBC					(0|1, 0:STBC encoding disable, 1:STBC encoding disable)
+		LDPC ESS				(0|1, 0:LDPC ESS disable, 1:LDPC ESS enable)
+		ApTxPwr					(0-61, 0-60:Values 0-61 maps to -20 dBm to 40 dBm)
+		PreFecPadFct			(1-4, a-factor)
+		Disambing				(0|1, 0:Set to Default)
+		Spatial Reuse			(65535 Default Value)
+		Doppler					(0|1, 0:disable, 1:enable)
+		HE SIG2					(0x1FF Default value)
+		AID12					(any 12 bit value)
+		RUAllocReg				(RU index, any 8 bit value)
+		RUAlloc					(0|1, 0: RU allocated is primary 80Mhz, 1: non-primary 80MHz)
+		Coding Type				(0|1, 0: BCC,1: LDPC)
+		UlMCS				    (Valid MCS Value)
+		UL DCM					(0|1, 0:disable, 1:enable)
+		SSAlloc					(Spatial streams, BITS[0-2]:Number of spatial streams BITS[3-5]:Starting spatial stream)
+		Target RSSI ID			(0-90, 0-90:Values 0-90 map to -100dBm to -20dBm)
+		MPDU MU SF				(0:Multiplier=1, 1:Multiplier=2 , 2:Multiplier=4, 3:Multiplier=8)
+		TID_AL					(0:Set to default Value)
+		AC_PL					(0|1, 0:disable, 1:enable)
+		Pref_AC				    (0:AC_VO, 1:AC_V1, 2:AC_BE, 3:AC_BK)
+
+    Example: To configure Trigger frame:
+    echo "trigger_frame=1 0 1 2 5484 0 256 0 0 2 1 0 0 0 1 60 1 0 65535 0 511 5 0 67 0 0 0 0 90 0 0 0 0"  > /proc/mwlan/adapter0/config
+
+    Example: To disable configuration of  Trigger frame:
+    echo "trigger_frame=0"  > /proc/mwlan/adapter0/config
+
+    For more information about trigger frame configuration as per supported BW(80MHz, 40MHz and 20MHz),
+    Please refer : config/trigger_frame_cfg.conf
+
+    Example : To start trigger frame transmission :
+    echo "rf_test_mode=1" > /proc/mwlan/adapter0/config
+    echo "radio_mode=3 0" > /proc/mwlan/adapterX/config
+    echo "bw=0" > /proc/mwlan/adapter0/config
+    echo "channel=36" > /proc/mwlan/adapter0/config
+    echo "trigger_frame=1 0 1 2 5484 0 256 0 0 0 1 0 0 0 1 60 1 0 65535 0 511 5 0 61 0 0 0 0 90 0 0 0 0"  > /proc/mwlan/adapter0/config
+    echo "tx_frame=1 0x1102 0xabababab 200" >/proc/mwlan/adapter0/config
+
