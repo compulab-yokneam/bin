@@ -5,7 +5,7 @@ Run on the DUT:
     ./rf_test.py
 
 Or from your host:
-    ssh -t root@192.168.8.10 /opt/compulab/rf-test/rf_test.py
+    ssh -t root@dut /opt/compulab/rf-test/rf_test.py
 
 Preview commands without writing to the driver:
     ./rf_test.py --dry-run
