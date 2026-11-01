@@ -38,6 +38,11 @@ function gw_get_sled() {
 	esac
 }
 
+## TPM
+export TPM_DEV_BASE=/sys/bus/i2c/devices/2-002e
+export TPM_DEV_HOME=${TPM_DEV_BASE}/tpm
+export TPMRM_DEV_HOME=${TPM_DEV_BASE}/tpmrm
+
 ## Kernel modules
 declare -a IOTG_KO_ARR=("iwlwifi" "btusb")
 function gw_get_ko_arr() {
